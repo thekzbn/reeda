@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, memo } from "react";
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist";
 import { pdfjsLib } from "./pdf-worker";
-import type { SearchMatch } from "./types";
+import type { DocumentAnnotation, SearchMatch } from "./types";
+import { AnnotationOverlay } from "./AnnotationOverlay";
 
 interface PdfPageProps {
   pageNumber: number; // 1-based
@@ -9,6 +10,7 @@ interface PdfPageProps {
   scale: number;
   searchQuery: string;
   activeMatch: SearchMatch | null;
+  annotations: DocumentAnnotation[];
   onPageVisible?: (pageNumber: number) => void;
 }
 
@@ -18,6 +20,7 @@ export const PdfPage = memo(function PdfPage({
   scale,
   searchQuery,
   activeMatch,
+  annotations,
   onPageVisible,
 }: PdfPageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -83,6 +86,7 @@ export const PdfPage = memo(function PdfPage({
   useEffect(() => {
     if (!isVisible) return;
 
+    setIsRendered(false);
     let isCancelled = false;
     let renderTask: RenderTask | null = null;
     let textLayerInstance: { cancel: () => void } | null = null;
@@ -229,6 +233,7 @@ export const PdfPage = memo(function PdfPage({
       {isVisible ? (
         <>
           <canvas ref={canvasRef} className="block" />
+          <AnnotationOverlay annotations={annotations} />
           <div ref={textLayerRef} className="textLayer" />
         </>
       ) : (

@@ -1,34 +1,34 @@
 import fs from "node:fs";
 import path from "node:path";
 
-function createSimplePdf() {
-  const pages = [
-    {
-      title: "Reeda Reading Experience - System Design",
-      paragraphs: [
-        "Welcome to the Reeda reading environment. This document is a test fixture designed to verify page rendering, typography, text selection, and in-document search.",
-        "Reeda focuses on deep work with text documents and research papers. It provides an uncluttered interface without visual noise, floating cards, or excessive decorative elements.",
-        "The reading surface supports continuous scrolling, high-DPI canvas rendering, and selectable text layers for copying citations directly into your notes workspace.",
-      ],
-    },
-    {
-      title: "In-Document Text Search and Match Navigation",
-      paragraphs: [
-        "The search subsystem scans every page in the loaded document and highlights exact word matches on the active text layer.",
-        "Use Ctrl+F (or Cmd+F on macOS) to open the search bar. You can navigate between occurrences with the next and previous match buttons or with Enter and Shift+Enter.",
-        "Try searching for terms such as 'workspace', 'typography', 'rendering', or 'notes' to test live text layer highlighting across multiple pages.",
-      ],
-    },
-    {
-      title: "Side-by-Side Notes Workspace and Divider",
-      paragraphs: [
-        "The notes workspace allows readers to write, synthesize ideas, and format findings while keeping the source PDF immediately in view.",
-        "The horizontal divider between the PDF and the notes panes can be grabbed and dragged continuously to adjust pane proportions to your reading or writing preference.",
-        "You can also select any sentence from the PDF and click the floating Add to notes button to insert the excerpt directly into your notes editor.",
-      ],
-    },
-  ];
+const fixturePages = [
+  {
+    title: "Reeda Reading Experience - System Design",
+    paragraphs: [
+      "Welcome to the Reeda reading environment. This document is a test fixture designed to verify page rendering, typography, text selection, and in-document search.",
+      "Reeda focuses on deep work with text documents and research papers. It provides an uncluttered interface without visual noise, floating cards, or excessive decorative elements.",
+      "The reading surface supports continuous scrolling, high-DPI canvas rendering, and selectable text layers for copying citations directly into your notes workspace.",
+    ],
+  },
+  {
+    title: "In-Document Text Search and Match Navigation",
+    paragraphs: [
+      "The search subsystem scans every page in the loaded document and highlights exact word matches on the active text layer.",
+      "Use Ctrl+F (or Cmd+F on macOS) to open the search bar. You can navigate between occurrences with the next and previous match buttons or with Enter and Shift+Enter.",
+      "Try searching for terms such as 'workspace', 'typography', 'rendering', or 'notes' to test live text layer highlighting across multiple pages.",
+    ],
+  },
+  {
+    title: "Side-by-Side Notes Workspace and Divider",
+    paragraphs: [
+      "The notes workspace allows readers to write, synthesize ideas, and format findings while keeping the source PDF immediately in view.",
+      "The horizontal divider between the PDF and the notes panes can be grabbed and dragged continuously to adjust pane proportions to your reading or writing preference.",
+      "You can also select any sentence from the PDF and click the floating Add to notes button to insert the excerpt directly into your notes editor.",
+    ],
+  },
+];
 
+function createPdf(pages) {
   let objCount = 0;
   const objects = [];
 
@@ -41,6 +41,7 @@ function createSimplePdf() {
   // Font object (Helvetica)
   const fontObj = addObject(`<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>`);
   const fontBoldObj = addObject(`<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>`);
+  const pagesObj = addObject("");
 
   const pageObjIds = [];
 
@@ -99,16 +100,13 @@ function createSimplePdf() {
     pageObjIds.push(pageObj);
   });
 
-  // Pages parent object (ID 3)
+  // Pages was reserved before page objects so every /Parent reference is stable.
   const pagesObjContent = `<<
   /Type /Pages
   /Kids [${pageObjIds.map((id) => `${id} 0 R`).join(" ")}]
   /Count ${pages.length}
 >>`;
-  // We need Pages to be object 3
-  objects.splice(2, 0, { id: 3, content: pagesObjContent });
-  // reassign IDs
-  objects.forEach((o, i) => (o.id = i + 1));
+  objects[pagesObj - 1].content = pagesObjContent;
 
   // Catalog object
   const catalogObj = addObject(`<<
@@ -157,7 +155,19 @@ function wrapText(text, maxChars) {
   return lines;
 }
 
-const pdfBuffer = createSimplePdf();
-const outPath = path.resolve("public/sample-document.pdf");
-fs.writeFileSync(outPath, pdfBuffer);
-console.log(`Generated sample PDF at ${outPath} (${pdfBuffer.length} bytes)`);
+const samplePath = path.resolve("public/sample-document.pdf");
+const sampleBuffer = createPdf(fixturePages);
+fs.writeFileSync(samplePath, sampleBuffer);
+
+const longPages = Array.from({ length: 24 }, (_, index) => ({
+  title: `Long-form selection fixture — section ${index + 1}`,
+  paragraphs: [
+    "This dense, multi-page fixture is intentionally ordinary prose. It exercises selections across several visual lines, varying widths, page boundaries, and repeated text fragments without relying on a single bounding box.",
+    "Readers may zoom, resize the reading pane, move between pages, and return later. An annotation must therefore keep page-relative geometry rather than coordinates from one particular browser viewport.",
+    "The quick brown fox jumps over the lazy dog while a longer research sentence continues through a line wrap to make underlines, highlights, and strikethrough annotations easy to inspect.",
+  ],
+}));
+const longPath = path.resolve("public/long-selection-fixture.pdf");
+const longBuffer = createPdf(longPages);
+fs.writeFileSync(longPath, longBuffer);
+console.log(`Generated ${samplePath} and ${longPath}`);

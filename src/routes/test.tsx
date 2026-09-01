@@ -16,11 +16,12 @@ export const Route = createFileRoute("/test")({
 });
 
 function TestPage() {
+  const fixture = new URLSearchParams(window.location.search).get("fixture") === "long";
   return (
     <PdfReader
-      documentUrl="/sample-document.pdf"
-      title="Sample Research Paper"
-      documentId="test-fixture-document"
+      documentUrl={fixture ? "/long-selection-fixture.pdf" : "/sample-document.pdf"}
+      title={fixture ? "Long Selection Fixture" : "Sample Research Paper"}
+      documentId={fixture ? "test-fixture-long-document" : "test-fixture-document"}
     />
   );
 }

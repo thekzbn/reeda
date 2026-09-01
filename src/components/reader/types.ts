@@ -34,3 +34,28 @@ export interface ReaderState {
   isSearchOpen: boolean;
   isTocOpen: boolean;
 }
+
+export type AnnotationType = "highlight" | "underline" | "strikethrough";
+
+/** Page-relative fractions, independent of the rendered viewport and device pixels. */
+export interface AnnotationRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface AnnotationGeometry {
+  version: 1;
+  rects: AnnotationRect[];
+}
+
+export interface DocumentAnnotation {
+  id: string;
+  documentId: string;
+  pageNumber: number;
+  type: AnnotationType;
+  selectedText: string;
+  geometry: AnnotationGeometry;
+  createdAt: string;
+}

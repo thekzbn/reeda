@@ -29,6 +29,45 @@
   -webkit-user-select: text;
 }
 
+.pdf-page-container .annotationLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.pdf-page-container .pdf-annotation {
+  position: absolute;
+  box-sizing: border-box;
+  pointer-events: auto;
+  transition: opacity 0.15s ease;
+}
+
+.pdf-page-container .pdf-annotation--highlight {
+  background: color-mix(in oklch, var(--primary) 35%, transparent);
+  border-radius: 2px;
+  mix-blend-mode: multiply;
+}
+
+:is(.dark) .pdf-page-container .pdf-annotation--highlight {
+  background: color-mix(in oklch, var(--primary) 45%, transparent);
+  mix-blend-mode: screen;
+}
+
+.pdf-page-container .pdf-annotation--underline {
+  border-bottom: max(2px, 0.14em) solid var(--primary);
+}
+
+.pdf-page-container .pdf-annotation--strikethrough::after {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: max(2px, 0.12em);
+  background: var(--destructive);
+  content: "";
+}
+
 .pdf-page-container .textLayer span,
 .pdf-page-container .textLayer br {
   color: transparent;
@@ -39,7 +78,7 @@
 }
 
 .pdf-page-container .textLayer ::selection {
-  background: color-mix(in oklch, var(--primary) 30%, transparent);
+  background: color-mix(in oklch, var(--primary) 38%, transparent);
   color: transparent;
 }
 

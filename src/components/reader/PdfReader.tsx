@@ -10,10 +10,167 @@ import type { NotesEditorHandle } from "./NotesEditor";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import type { WorkspaceMode, ZoomMode } from "./types";
 import "./pdf-text-layer.css";
-import { Loader2 } from "lucide-react";
+import {
+  Loader2,
+  Highlighter,
+  Underline as UnderlineIcon,
+  Strikethrough as StrikeIcon,
+  BookOpen,
+  Copy,
+  Check,
+  X,
+  Search,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
+import { createDocumentAnnotations, getDocumentAnnotations } from "@/lib/annotations";
+import type {
+  AnnotationGeometry,
+  AnnotationRect,
+  AnnotationType,
+  DocumentAnnotation,
+} from "./types";
+import { toast } from "sonner";
+
+interface SelectionDraft {
+  pageNumber: number;
+  geometry: AnnotationGeometry;
+}
+
+interface PdfSelection {
+  text: string;
+  x: number;
+  y: number;
+  placeBelow?: boolean;
+  drafts: SelectionDraft[];
+}
+
+function rectIntersection(rect: DOMRect, page: DOMRect): DOMRect | null {
+  const left = Math.max(rect.left, page.left);
+  const top = Math.max(rect.top, page.top);
+  const right = Math.min(rect.right, page.right);
+  const bottom = Math.min(rect.bottom, page.bottom);
+  return right > left && bottom > top ? new DOMRect(left, top, right - left, bottom - top) : null;
+}
+
+function mergeLineRects(rects: AnnotationRect[]): AnnotationRect[] {
+  const sorted = [...rects].sort((a, b) => a.y - b.y || a.x - b.x);
+  return sorted.reduce<AnnotationRect[]>((merged, rect) => {
+    const previous = merged.at(-1);
+    if (
+      previous &&
+      Math.abs(previous.y - rect.y) < 0.004 &&
+      Math.abs(previous.height - rect.height) < 0.004 &&
+      rect.x <= previous.x + previous.width + 0.004
+    ) {
+      previous.width = Math.max(previous.width, rect.x + rect.width - previous.x);
+    } else {
+      merged.push({ ...rect });
+    }
+    return merged;
+  }, []);
+}
+
+function getNodeElement(node: Node | null): Element | null {
+  if (!node) return null;
+  return node instanceof Element ? node : node.parentElement;
+}
+
+function selectionFromRange(root: HTMLElement, range: Range): PdfSelection | null {
+  const text = window.getSelection()?.toString().replace(/\s+/g, " ").trim() ?? "";
+  if (!text) return null;
+
+  const startEl = getNodeElement(range.startContainer);
+  const endEl = getNodeElement(range.endContainer);
+  if (!startEl || !endEl) return null;
+
+  const isStartInPdf =
+    startEl.closest(".pdf-page-container") !== null || startEl.closest(".textLayer") !== null;
+  const isEndInPdf =
+    endEl.closest(".pdf-page-container") !== null || endEl.closest(".textLayer") !== null;
+  if (!isStartInPdf && !isEndInPdf && !root.contains(startEl) && !root.contains(endEl)) {
+    return null;
+  }
+
+  const pageElements = Array.from(
+    root.querySelectorAll<HTMLElement>(".pdf-page-container[data-page-number]"),
+  );
+  const byPage = new Map<number, AnnotationRect[]>();
+  let selectionRects = Array.from(range.getClientRects()).filter(
+    (rect) => rect.width > 0 && rect.height > 0,
+  );
+
+  if (selectionRects.length === 0) {
+    const bound = range.getBoundingClientRect();
+    if (bound.width > 0 && bound.height > 0) {
+      selectionRects = [bound];
+    }
+  }
+
+  for (const pageElement of pageElements) {
+    const pageNumber = Number(pageElement.dataset["pageNumber"]);
+    const pageRect = pageElement.getBoundingClientRect();
+    if (!Number.isInteger(pageNumber) || pageRect.width <= 0 || pageRect.height <= 0) continue;
+    for (const rect of selectionRects) {
+      const clipped = rectIntersection(rect, pageRect);
+      if (!clipped) continue;
+      const normalized = {
+        x: (clipped.left - pageRect.left) / pageRect.width,
+        y: (clipped.top - pageRect.top) / pageRect.height,
+        width: clipped.width / pageRect.width,
+        height: clipped.height / pageRect.height,
+      };
+      if (normalized.width > 0 && normalized.height > 0) {
+        byPage.set(pageNumber, [...(byPage.get(pageNumber) ?? []), normalized]);
+      }
+    }
+  }
+
+  const drafts = [...byPage.entries()]
+    .map(([pageNumber, rects]) => ({
+      pageNumber,
+      geometry: { version: 1 as const, rects: mergeLineRects(rects) },
+    }))
+    .filter((draft) => draft.geometry.rects.length > 0);
+
+  if (drafts.length === 0) return null;
+
+  const rangeBounds = range.getBoundingClientRect();
+  const topY = rangeBounds.top > 0 ? rangeBounds.top : (selectionRects[0]?.top ?? 100);
+  const bottomY =
+    rangeBounds.bottom > 0
+      ? rangeBounds.bottom
+      : (selectionRects[selectionRects.length - 1]?.bottom ?? topY + 20);
+  const centerX = rangeBounds.left + rangeBounds.width / 2;
+
+  // Place below if too close to the top toolbar, otherwise above
+  const placeBelow = topY < 80;
+  const targetY = placeBelow ? bottomY : topY;
+
+  const viewportWidth = typeof window !== "undefined" ? window.innerWidth : 800;
+  const minX = 180;
+  const maxX = Math.max(minX, viewportWidth - 180);
+  const clampedX = Math.max(minX, Math.min(maxX, centerX));
+
+  return {
+    text,
+    x: clampedX,
+    y: targetY,
+    placeBelow,
+    drafts,
+  };
+}
 
 interface PdfReaderProps {
   documentUrl: string;
@@ -35,11 +192,27 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
   const [isTocOpen, setIsTocOpen] = useState<boolean>(false);
   const [isDesktop, setIsDesktop] = useState<boolean>(true);
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("split");
-  const [selection, setSelection] = useState<{ text: string; x: number; y: number } | null>(null);
+  const [selection, setSelection] = useState<PdfSelection | null>(null);
+  const [annotations, setAnnotations] = useState<DocumentAnnotation[]>([]);
+  const [isSavingAnnotation, setIsSavingAnnotation] = useState(false);
   const [isDraggingDivider, setIsDraggingDivider] = useState<boolean>(false);
 
   const { pdfDoc, totalPages, outline, firstPageDimension, isLoading, error } =
     usePdfDocument(documentUrl);
+
+  useEffect(() => {
+    let cancelled = false;
+    void getDocumentAnnotations(documentId)
+      .then((loaded) => {
+        if (!cancelled) setAnnotations(loaded);
+      })
+      .catch(() => {
+        if (!cancelled) toast.error("We could not load annotations right now.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [documentId]);
 
   const handleNavigateToPage = useCallback(
     (pageNumber: number) => {
@@ -92,14 +265,15 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
 
   // Initial fit-width calculation once firstPageDimension is loaded
   useEffect(() => {
-    if (firstPageDimension && zoomMode === "fit-width") {
+    if (!isLoading && firstPageDimension && zoomMode === "fit-width") {
       const newScale = computeFitScale("fit-width");
       setScale(newScale);
     }
-  }, [firstPageDimension, computeFitScale, zoomMode]);
+  }, [isLoading, firstPageDimension, computeFitScale, zoomMode]);
 
   // Recalculate zoom on container resize if in fit mode
   useEffect(() => {
+    if (isLoading) return;
     const el = scrollContainerRef.current;
     if (!el) return;
 
@@ -110,8 +284,11 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
     });
 
     observer.observe(el);
+    if (zoomMode === "fit-width" || zoomMode === "fit-page") {
+      setScale(computeFitScale(zoomMode));
+    }
     return () => observer.disconnect();
-  }, [zoomMode, computeFitScale]);
+  }, [isLoading, zoomMode, computeFitScale]);
 
   // Track fullscreen changes
   useEffect(() => {
@@ -138,7 +315,9 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
     return () => query.removeEventListener("change", apply);
   }, [workspaceMode]);
 
-  // Track selected PDF text so it can be sent to the notes editor
+  const [copied, setCopied] = useState<boolean>(false);
+
+  // Convert the browser's transient range to per-page document-relative rects.
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
@@ -150,30 +329,46 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
         return;
       }
       const range = sel.getRangeAt(0);
-      if (!el.contains(range.commonAncestorContainer)) {
+      if (!el.contains(range.commonAncestorContainer) && !el.contains(range.startContainer)) {
         setSelection(null);
         return;
       }
-      const text = sel.toString().replace(/\s+/g, " ").trim();
-      if (!text) {
+      const next = selectionFromRange(el, range);
+      if (!next || !next.text) {
         setSelection(null);
         return;
       }
-      const rect = range.getBoundingClientRect();
-      setSelection({ text, x: rect.left + rect.width / 2, y: rect.top });
+      setSelection(next);
+    };
+
+    const handlePointerUp = () => {
+      window.requestAnimationFrame(handleSelection);
     };
 
     const handleScroll = () => {
+      const sel = window.getSelection();
+      if (sel && !sel.isCollapsed && sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        if (el.contains(range.commonAncestorContainer) || el.contains(range.startContainer)) {
+          const next = selectionFromRange(el, range);
+          if (next) {
+            setSelection(next);
+            return;
+          }
+        }
+      }
       setSelection(null);
     };
 
-    document.addEventListener("mouseup", handleSelection);
-    document.addEventListener("touchend", handleSelection);
+    document.addEventListener("selectionchange", handleSelection);
+    document.addEventListener("pointerup", handlePointerUp);
     el.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleSelection);
     return () => {
-      document.removeEventListener("mouseup", handleSelection);
-      document.removeEventListener("touchend", handleSelection);
+      document.removeEventListener("selectionchange", handleSelection);
+      document.removeEventListener("pointerup", handlePointerUp);
       el.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleSelection);
     };
   }, [pdfDoc]);
 
@@ -198,6 +393,9 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
           setSearchQuery("");
         } else if (isTocOpen) {
           setIsTocOpen(false);
+        } else if (selection) {
+          setSelection(null);
+          window.getSelection()?.removeAllRanges();
         }
       } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
         e.preventDefault();
@@ -210,7 +408,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isSearchOpen, isTocOpen, currentPage, handleNavigateToPage]);
+  }, [isSearchOpen, isTocOpen, currentPage, handleNavigateToPage, selection]);
 
   // Zoom handlers
   const handleZoomIn = () => {
@@ -283,6 +481,23 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
   const isPdfVisible = workspaceMode === "pdf" || (isDesktop && workspaceMode === "split");
   const isNotesVisible = workspaceMode === "notes" || (isDesktop && workspaceMode === "split");
 
+  const copySelection = async () => {
+    if (!selection) return;
+    try {
+      await navigator.clipboard.writeText(selection.text);
+      setCopied(true);
+      toast.success("Text copied to clipboard");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Could not copy to clipboard");
+    }
+  };
+
+  const clearSelection = () => {
+    setSelection(null);
+    window.getSelection()?.removeAllRanges();
+  };
+
   const sendSelectionToNotes = () => {
     if (!selection) return;
     if (!isDesktop) {
@@ -293,33 +508,158 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
     const text = selection.text;
     setSelection(null);
     window.getSelection()?.removeAllRanges();
-    window.setTimeout(() => notesRef.current?.insertText(text), 50);
+    window.setTimeout(() => {
+      notesRef.current?.insertText(text);
+      toast.success("Added to notes");
+    }, 50);
+  };
+
+  const createAnnotation = async (type: AnnotationType) => {
+    if (!selection || isSavingAnnotation) return;
+    setIsSavingAnnotation(true);
+    try {
+      const created = await createDocumentAnnotations(
+        documentId,
+        selection.drafts.map((draft) => ({
+          pageNumber: draft.pageNumber,
+          type,
+          selectedText: selection.text,
+          geometry: draft.geometry,
+        })),
+      );
+      setAnnotations((current) => [...current, ...created]);
+      setSelection(null);
+      window.getSelection()?.removeAllRanges();
+
+      const label =
+        type === "highlight"
+          ? "Text highlighted"
+          : type === "underline"
+            ? "Text underlined"
+            : "Text struck through";
+      toast.success(label);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "We could not save that annotation.");
+    } finally {
+      setIsSavingAnnotation(false);
+    }
   };
 
   const pdfPane = (
-    <main
-      ref={scrollContainerRef}
-      className={cn(
-        "relative h-full overflow-y-auto overflow-x-auto bg-muted/40 p-4 sm:p-6",
-        !isPdfVisible && "hidden",
-      )}
-    >
-      <div className="mx-auto flex flex-col items-center">
-        {pagesArray.map((pageNum) => (
-          <PdfPage
-            key={pageNum}
-            pageNumber={pageNum}
-            pdfDoc={pdfDoc}
-            scale={scale}
-            searchQuery={searchQuery}
-            activeMatch={activeMatch}
-            onPageVisible={(visiblePage) => {
-              setCurrentPage(visiblePage);
-            }}
-          />
-        ))}
-      </div>
-    </main>
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <main
+          ref={scrollContainerRef}
+          className={cn(
+            "relative h-full overflow-y-auto overflow-x-auto bg-muted/40 p-4 sm:p-6",
+            !isPdfVisible && "hidden",
+          )}
+        >
+          <div className="mx-auto flex flex-col items-center">
+            {!selection ? (
+              <div className="pointer-events-none sticky top-2 z-10 mb-2 rounded-full border border-border/70 bg-background/90 px-3 py-1 text-xs text-muted-foreground shadow-sm backdrop-blur">
+                Select text in the PDF to highlight, underline, or take notes
+              </div>
+            ) : null}
+            {pagesArray.map((pageNum) => (
+              <PdfPage
+                key={pageNum}
+                pageNumber={pageNum}
+                pdfDoc={pdfDoc}
+                scale={scale}
+                searchQuery={searchQuery}
+                activeMatch={activeMatch}
+                annotations={annotations.filter((annotation) => annotation.pageNumber === pageNum)}
+                onPageVisible={(visiblePage) => {
+                  setCurrentPage(visiblePage);
+                }}
+              />
+            ))}
+          </div>
+        </main>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-56">
+        {selection ? (
+          <>
+            <ContextMenuItem
+              onClick={() => void createAnnotation("highlight")}
+              disabled={isSavingAnnotation}
+              className="gap-2 cursor-pointer"
+            >
+              <Highlighter className="h-4 w-4 text-amber-500" />
+              <span>Highlight text</span>
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => void createAnnotation("underline")}
+              disabled={isSavingAnnotation}
+              className="gap-2 cursor-pointer"
+            >
+              <UnderlineIcon className="h-4 w-4 text-blue-500" />
+              <span>Underline text</span>
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => void createAnnotation("strikethrough")}
+              disabled={isSavingAnnotation}
+              className="gap-2 cursor-pointer"
+            >
+              <StrikeIcon className="h-4 w-4 text-rose-500" />
+              <span>Strikethrough text</span>
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem onClick={sendSelectionToNotes} className="gap-2 cursor-pointer">
+              <BookOpen className="h-4 w-4 text-primary" />
+              <span>Add to notes</span>
+            </ContextMenuItem>
+            <ContextMenuItem onClick={copySelection} className="gap-2 cursor-pointer">
+              <Copy className="h-4 w-4" />
+              <span>Copy text</span>
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              onClick={clearSelection}
+              className="gap-2 text-muted-foreground cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+              <span>Clear selection</span>
+            </ContextMenuItem>
+          </>
+        ) : (
+          <>
+            <ContextMenuItem onClick={handleZoomIn} className="gap-2 cursor-pointer">
+              <ZoomIn className="h-4 w-4" />
+              <span>Zoom in</span>
+              <ContextMenuShortcut>Ctrl++</ContextMenuShortcut>
+            </ContextMenuItem>
+            <ContextMenuItem onClick={handleZoomOut} className="gap-2 cursor-pointer">
+              <ZoomOut className="h-4 w-4" />
+              <span>Zoom out</span>
+              <ContextMenuShortcut>Ctrl+-</ContextMenuShortcut>
+            </ContextMenuItem>
+            <ContextMenuItem onClick={handleFitWidth} className="gap-2 cursor-pointer">
+              <span>Fit to width</span>
+            </ContextMenuItem>
+            <ContextMenuItem onClick={handleFitPage} className="gap-2 cursor-pointer">
+              <span>Fit to page</span>
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem onClick={() => setIsSearchOpen(true)} className="gap-2 cursor-pointer">
+              <Search className="h-4 w-4" />
+              <span>Find in document</span>
+              <ContextMenuShortcut>Ctrl+F</ContextMenuShortcut>
+            </ContextMenuItem>
+            {outline && outline.length > 0 ? (
+              <ContextMenuItem
+                onClick={() => setIsTocOpen((prev) => !prev)}
+                className="gap-2 cursor-pointer"
+              >
+                <BookOpen className="h-4 w-4" />
+                <span>Table of contents</span>
+              </ContextMenuItem>
+            ) : null}
+          </>
+        )}
+      </ContextMenuContent>
+    </ContextMenu>
   );
 
   const notesPane = (
@@ -417,17 +757,86 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
 
       {selection && isPdfVisible ? (
         <div
-          className="fixed z-40 -translate-x-1/2 -translate-y-full pb-2"
-          style={{ left: selection.x, top: selection.y }}
+          className="fixed z-50 pointer-events-auto transition-all duration-150 animate-in fade-in zoom-in-95"
+          style={{
+            left: selection.x,
+            top: selection.y,
+            transform: `translate(-50%, ${selection.placeBelow ? "8px" : "-100%"})`,
+            marginTop: selection.placeBelow ? "0" : "-8px",
+          }}
         >
-          <Button
-            size="sm"
-            className="squircle h-8 px-3 text-xs"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={sendSelectionToNotes}
-          >
-            Add to notes
-          </Button>
+          <div className="flex items-center gap-0.5 rounded-full border border-border/80 bg-background/95 p-1 shadow-xl backdrop-blur-md">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium hover:bg-amber-500/15 hover:text-amber-600 dark:hover:text-amber-400"
+              title="Highlight text"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => void createAnnotation("highlight")}
+              disabled={isSavingAnnotation}
+            >
+              <Highlighter className="h-3.5 w-3.5 text-amber-500" />
+              <span>Highlight</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium hover:bg-blue-500/15 hover:text-blue-600 dark:hover:text-blue-400"
+              title="Underline text"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => void createAnnotation("underline")}
+              disabled={isSavingAnnotation}
+            >
+              <UnderlineIcon className="h-3.5 w-3.5 text-blue-500" />
+              <span>Underline</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium hover:bg-rose-500/15 hover:text-rose-600 dark:hover:text-rose-400"
+              title="Strikethrough text"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => void createAnnotation("strikethrough")}
+              disabled={isSavingAnnotation}
+            >
+              <StrikeIcon className="h-3.5 w-3.5 text-rose-500" />
+              <span>Strike</span>
+            </Button>
+
+            <div className="mx-1 h-3.5 w-px bg-border/80" />
+
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium text-foreground/80 hover:bg-accent hover:text-foreground"
+              title="Copy text"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={copySelection}
+            >
+              {copied ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-emerald-500" />
+                  <span className="text-emerald-500">Copied</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" />
+                  <span>Copy</span>
+                </>
+              )}
+            </Button>
+
+            <Button
+              size="sm"
+              className="squircle h-7 gap-1.5 rounded-full bg-primary px-3 text-xs font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
+              title="Add selected text to notes"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={sendSelectionToNotes}
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              <span>Add to notes</span>
+            </Button>
+          </div>
         </div>
       ) : null}
     </div>

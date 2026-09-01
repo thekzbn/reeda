@@ -29,6 +29,9 @@ const DEFAULT_TEST_NOTE = `# Reading Notes: System Design & Architecture
 - [ ] Complete synthesis summary
 `;
 
+const isTestDocument = (documentId: string) => documentId.startsWith("test-fixture-");
+const testNoteKey = (documentId: string) => `reeda-test-note:${documentId}`;
+
 async function requireUserId(): Promise<string> {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) throw new NoteError("Your session has expired. Please sign in again.");
@@ -37,9 +40,9 @@ async function requireUserId(): Promise<string> {
 
 /** Returns the stored Markdown for a document, or an empty string when none exists yet. */
 export async function getDocumentNote(documentId: string): Promise<string> {
-  if (documentId === "test-fixture-document") {
+  if (isTestDocument(documentId)) {
     if (typeof window !== "undefined") {
-      const local = window.localStorage.getItem("reeda-test-note");
+      const local = window.localStorage.getItem(testNoteKey(documentId));
       return local !== null ? local : DEFAULT_TEST_NOTE;
     }
     return DEFAULT_TEST_NOTE;
@@ -57,9 +60,9 @@ export async function getDocumentNote(documentId: string): Promise<string> {
 
 /** Creates or updates the Markdown note attached to a document. */
 export async function saveDocumentNote(documentId: string, content: string): Promise<void> {
-  if (documentId === "test-fixture-document") {
+  if (isTestDocument(documentId)) {
     if (typeof window !== "undefined") {
-      window.localStorage.setItem("reeda-test-note", content);
+      window.localStorage.setItem(testNoteKey(documentId), content);
     }
     return;
   }
