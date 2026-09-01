@@ -10,6 +10,7 @@ import {
   Minimize2,
   BookOpen,
   ArrowLeft,
+  PanelRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +32,8 @@ interface ReaderHeaderProps {
   hasOutline: boolean;
   isTocOpen: boolean;
   isSearchOpen: boolean;
+  isNotesOpen: boolean;
+  onToggleNotes: () => void;
   onPageChange: (page: number) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
@@ -52,6 +55,8 @@ export function ReaderHeader({
   hasOutline,
   isTocOpen,
   isSearchOpen,
+  isNotesOpen,
+  onToggleNotes,
   onPageChange,
   onZoomIn,
   onZoomOut,
@@ -237,6 +242,22 @@ export function ReaderHeader({
           aria-label="Find in document"
         >
           <Search className="h-4 w-4" />
+        </Button>
+
+        {/* Notes workspace */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`squircle h-8 w-8 ${
+            isNotesOpen
+              ? "bg-accent text-accent-foreground"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+          onClick={onToggleNotes}
+          title={isNotesOpen ? "Hide notes" : "Show notes"}
+          aria-label="Notes"
+        >
+          <PanelRight className="h-4 w-4" />
         </Button>
 
         {/* Fullscreen */}

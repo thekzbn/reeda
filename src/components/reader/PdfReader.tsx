@@ -5,6 +5,13 @@ import { PdfPage } from "./PdfPage";
 import { ReaderHeader } from "./ReaderHeader";
 import { TableOfContents } from "./TableOfContents";
 import { SearchBar } from "./SearchBar";
+import { NotesPane } from "./NotesPane";
+import type { NotesEditorHandle } from "./NotesEditor";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
 import type { ZoomMode } from "./types";
 import "./pdf-text-layer.css";
 import { Loader2 } from "lucide-react";
@@ -17,9 +24,10 @@ interface PdfReaderProps {
   documentId: string;
 }
 
-export function PdfReader({ documentUrl, title }: PdfReaderProps) {
+export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const notesRef = useRef<NotesEditorHandle>(null);
 
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.0);
@@ -28,9 +36,14 @@ export function PdfReader({ documentUrl, title }: PdfReaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isTocOpen, setIsTocOpen] = useState<boolean>(false);
+  const [isNotesOpen, setIsNotesOpen] = useState<boolean>(true);
+  const [isDesktop, setIsDesktop] = useState<boolean>(true);
+  const [mobileView, setMobileView] = useState<"pdf" | "notes">("pdf");
+  const [selection, setSelection] = useState<{ text: string; x: number; y: number } | null>(null);
 
   const { pdfDoc, totalPages, outline, firstPageDimension, isLoading, error } =
     usePdfDocument(documentUrl);
+
 
   const handleNavigateToPage = useCallback(
     (pageNumber: number) => {
@@ -114,13 +127,60 @@ export function PdfReader({ documentUrl, title }: PdfReaderProps) {
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
+  // Track viewport size so small screens switch panes instead of splitting
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 1024px)");
+    const apply = () => setIsDesktop(query.matches);
+    apply();
+    query.addEventListener("change", apply);
+    return () => query.removeEventListener("change", apply);
+  }, []);
+
+  // Track selected PDF text so it can be sent to the notes editor
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    const handleSelection = () => {
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
+        setSelection(null);
+        return;
+      }
+      const range = sel.getRangeAt(0);
+      if (!el.contains(range.commonAncestorContainer)) {
+        setSelection(null);
+        return;
+      }
+      const text = sel.toString().replace(/\s+/g, " ").trim();
+      if (!text) {
+        setSelection(null);
+        return;
+      }
+      const rect = range.getBoundingClientRect();
+      setSelection({ text, x: rect.left + rect.width / 2, y: rect.top });
+    };
+
+    document.addEventListener("mouseup", handleSelection);
+    document.addEventListener("touchend", handleSelection);
+    return () => {
+      document.removeEventListener("mouseup", handleSelection);
+      document.removeEventListener("touchend", handleSelection);
+    };
+  }, [pdfDoc]);
+
   // Keyboard navigation & search shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't intercept if user is typing in an input
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+      // Don't intercept if user is typing in an input or the notes editor
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target instanceof HTMLElement && e.target.isContentEditable)
+      ) {
         return;
       }
+
 
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
         e.preventDefault();
@@ -213,6 +273,50 @@ export function PdfReader({ documentUrl, title }: PdfReaderProps) {
     );
   }
 
+  const notesVisible = isDesktop ? isNotesOpen : mobileView === "notes";
+  const pdfVisible = isDesktop || mobileView === "pdf";
+
+  const sendSelectionToNotes = () => {
+    if (!selection) return;
+    if (!isDesktop) setMobileView("notes");
+    else setIsNotesOpen(true);
+    const text = selection.text;
+    setSelection(null);
+    window.getSelection()?.removeAllRanges();
+    window.setTimeout(() => notesRef.current?.insertText(text), 0);
+  };
+
+  const pdfPane = (
+    <main
+      ref={scrollContainerRef}
+      className={`relative h-full overflow-y-auto overflow-x-auto bg-muted/40 p-4 sm:p-6 ${
+        pdfVisible ? "" : "hidden"
+      }`}
+    >
+      <div className="mx-auto flex flex-col items-center">
+        {pagesArray.map((pageNum) => (
+          <PdfPage
+            key={pageNum}
+            pageNumber={pageNum}
+            pdfDoc={pdfDoc}
+            scale={scale}
+            searchQuery={searchQuery}
+            activeMatch={activeMatch}
+            onPageVisible={(visiblePage) => {
+              setCurrentPage(visiblePage);
+            }}
+          />
+        ))}
+      </div>
+    </main>
+  );
+
+  const notesPane = (
+    <div className={`h-full min-h-0 ${notesVisible ? "" : "hidden"}`}>
+      <NotesPane ref={notesRef} documentId={documentId} />
+    </div>
+  );
+
   return (
     <div
       ref={containerRef}
@@ -228,6 +332,11 @@ export function PdfReader({ documentUrl, title }: PdfReaderProps) {
         hasOutline={outline !== null && outline.length > 0}
         isTocOpen={isTocOpen}
         isSearchOpen={isSearchOpen}
+        isNotesOpen={notesVisible}
+        onToggleNotes={() => {
+          if (isDesktop) setIsNotesOpen((prev) => !prev);
+          else setMobileView((prev) => (prev === "notes" ? "pdf" : "notes"));
+        }}
         onPageChange={handleNavigateToPage}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
@@ -266,27 +375,41 @@ export function PdfReader({ documentUrl, title }: PdfReaderProps) {
         onPrevMatch={prevMatch}
       />
 
-      {/* Main PDF Scroll View */}
-      <main
-        ref={scrollContainerRef}
-        className="relative flex-1 overflow-y-auto overflow-x-auto p-4 sm:p-6"
-      >
-        <div className="mx-auto flex flex-col items-center">
-          {pagesArray.map((pageNum) => (
-            <PdfPage
-              key={pageNum}
-              pageNumber={pageNum}
-              pdfDoc={pdfDoc}
-              scale={scale}
-              searchQuery={searchQuery}
-              activeMatch={activeMatch}
-              onPageVisible={(visiblePage) => {
-                setCurrentPage(visiblePage);
-              }}
-            />
-          ))}
+      <div className="relative min-h-0 flex-1">
+        {isDesktop && isNotesOpen ? (
+          <ResizablePanelGroup direction="horizontal" autoSaveId="reeda-reader-split">
+            <ResizablePanel defaultSize={58} minSize={30}>
+              {pdfPane}
+            </ResizablePanel>
+            <ResizableHandle className="w-px bg-border transition-colors hover:bg-primary/40 data-[resize-handle-state=drag]:bg-primary/60" />
+            <ResizablePanel defaultSize={42} minSize={25}>
+              {notesPane}
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        ) : (
+          <div className="h-full">
+            {pdfPane}
+            {notesPane}
+          </div>
+        )}
+      </div>
+
+      {selection && pdfVisible ? (
+        <div
+          className="fixed z-40 -translate-x-1/2 -translate-y-full pb-2"
+          style={{ left: selection.x, top: selection.y }}
+        >
+          <Button
+            size="sm"
+            className="squircle h-8 px-3 text-xs"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={sendSelectionToNotes}
+          >
+            Add to notes
+          </Button>
         </div>
-      </main>
+      ) : null}
     </div>
   );
 }
+
