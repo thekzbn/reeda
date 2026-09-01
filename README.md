@@ -1,78 +1,137 @@
-# Reeda
+# reeda
 
-Build the first foundation of Reeda, a web application for reading and working with PDFs. Use Lovable Cloud for authentication, database, storage, and backend functionality. This is a fresh project, so establish a clean foundation that later prompts can extend without needing to rebuild the application. Do not attempt to build the PDF reader, notes editor, annotation system, research features, analytics, Blog, or any other future functionality yet. This first build should concentrate only on authentication, user profile setup, the document library, and private PDF storage.
+A digital reading environment where the source document and the reader's own thinking live together in one workspace.
 
-A critical requirement for this build is that **the application must be in a working, runnable state whenever you finish or pause work**. Before stopping, pausing, or declaring the task complete, run the application and verify that it builds successfully without TypeScript errors, compilation errors, broken imports, missing dependencies, failed routes, or obvious runtime errors. If something you changed prevents the application from running, fix it before stopping. Do not leave known build failures for a later prompt. Do not consider the task complete merely because the requested code has been written. The current project must actually run.
+Reeda is being built around a question that most reading tools skip over: *what should reading digitally actually look like?* Rather than starting with a feature list and working backwards, the project begins by observing how people really read, highlight, search, and write when they are engaging with a document carefully. The design follows from those observations, not from assumptions about what a PDF reader should be.
 
-If you reach the point where the planned functionality is complete but the application does not build or run, prioritize fixing the build over adding additional features. If necessary, reduce or simplify the implementation you just added rather than leaving the project in a broken state. Every Lovable build should leave the repository in a stable state that another developer or agent can immediately continue from.
+The core idea is simple. When you read something that matters, you do not consume it passively and then go somewhere else to think. You pause, underline a phrase, and start forming a response while the source is still in front of you. Reading and thinking happen in the same moment. Reeda tries to preserve that by keeping the document and the reader's notes side by side in a single calm workspace, without forcing a switch between tools.
 
-Reeda should feel like a serious reading tool rather than a typical SaaS application. Use Inter throughout the application with the following setup:
+Reeda is built by [Quing](https://github.com/thekzbn) and is in active early development.
 
-```html id="q6g8fn"
-<link rel="preconnect" href="https://rsms.me/" />
-<link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
-```
+## What Reeda does today
 
-```css id="6j3m0o"
-:root {
-  font-family: Inter, sans-serif;
-  font-feature-settings:
-    "liga" 1,
-    "calt" 1;
-}
+Reeda is a web application that lets you upload PDF documents, read them in a focused environment, and write alongside them.
 
-@supports (font-variation-settings: normal) {
-  :root {
-    font-family: InterVariable, sans-serif;
-  }
-}
-```
+**The reading workspace** is the centre of the product. When you open a document, Reeda presents a split-pane view: the PDF on the left, a rich-text notes editor on the right. The divider between them is draggable, so you can give more space to whichever pane matters at the moment. On smaller screens, the workspace switches between full-screen PDF and full-screen notes views.
 
-Use `#6A5ACD` as the primary accent and build the rest of the colour system around it. The visual design should be extremely minimal and essential, with UX taking priority over decoration. Establish hierarchy through typography, spacing, alignment, subtle borders, and restrained tonal differences. Do not use shadows, glassmorphism, decorative gradients, decorative blobs, dashboards, needless cards, eyebrow headers, excessive pill-shaped controls, or persistent status labels. Do not use em dashes in user-facing copy. Use rounded geometry carefully, with subtle squircle-like treatment where appropriate on Chromium-based browsers and refined rounded rectangles elsewhere. Do not add tutorials, walkthroughs, feature tours, or instructional overlays. The interface should communicate its own interaction through good design.
+**The PDF reader** renders pages using Mozilla's pdf.js on a canvas, with a selectable text layer on top. It supports continuous vertical scrolling, fit-to-width and fit-to-page zoom modes, manual zoom controls, fullscreen mode, keyboard navigation (arrow keys, Page Up/Down), table of contents extraction from PDF outlines, and live full-text search with match highlighting and navigation across all pages.
 
-Require users to create an account before entering Reeda. Use Lovable Cloud authentication and support Google, Microsoft, Apple, phone, and email authentication. Google, Microsoft, and Apple should receive the strongest visual emphasis because they provide a convenient sign-in experience, while phone and email should remain available as secondary methods. Email should not be deceptively hidden. Do not create fake authentication flows or placeholder provider buttons. Use real authentication where configuration is available.
+**The notes editor** is a Tiptap-based rich-text editor that stores content as Markdown. It supports headings, bold, italic, bullet lists, numbered lists, task lists with checkboxes, blockquotes, and links. Notes are persisted per document and autosave after a short debounce (900ms). When you select text in the PDF, an "Add to notes" button appears, letting you send passages directly into your notes without copy-pasting.
 
-After a successful signup, automatically create the user's profile and present a compact profile setup experience. Ask what best describes the user, including Student, Researcher, Professional, General reader, and Other. Ask what they study or work in, including Computer Science, Engineering, Medicine, Law, Business, Humanities, Natural Sciences, Social Sciences, and Other. Ask why they are using Reeda, including Studying, Research, Writing, Professional work, General reading, Reference, and Other. Ask what they usually read and allow multiple selections, including Textbooks, Books, Journal articles, Research papers, Theses, Dissertations, Lecture materials, Reports, Manuals, Essays, Web articles, and Other. Finally, ask which tools they currently use for reading and note-taking, allowing multiple selections such as Notion, Obsidian, OneNote, Google Docs, Microsoft Word, Paper notebook, PDF annotations, and Other.
+**The document library** lists all uploaded PDFs with titles, file sizes, and dates. You can search, rename, and delete documents. Each user gets 500 MB of managed storage backed by Supabase Storage, with per-user folder isolation enforced by row-level security policies.
 
-Keep this profile setup short and straightforward. It is not a tutorial and should not feel like a questionnaire imposed on the user. Store the answers in the authenticated user's profile. Do not treat these answers as research consent and do not build any research functionality in this build.
+**Authentication** supports Google, Microsoft, and Apple OAuth, as well as email/password and phone OTP sign-in. New users go through a lightweight onboarding flow that collects reading context (role, field, purpose, reading materials, and current tools) to inform future development.
 
-After profile setup, take the user to the root route, `/`, which should serve as Reeda's document library. Do not call this a dashboard and do not design it as one. The page should primarily provide access to the user's documents and a clear way to add a PDF. Keep the application navigation small and quiet. Do not create a large sidebar and do not add placeholder navigation for features that do not exist yet.
+## Philosophy
 
-Create a secure `documents` data model associated with the authenticated user. At minimum, the document record should contain an identifier, the owning user, title, file type, file size, creation time, modification time, last-opened time, storage provider, and storage reference. Use proper database access policies so users can only read, modify, or delete documents belonging to their own account. Never trust a user ID supplied by the client.
+Reeda is intentionally narrow. It is not trying to become an AI chatbot, a productivity dashboard, a reference manager, or a generic document-management suite. It is trying to be a good place to read and think.
 
-The library should allow users to see their uploaded documents, open a document route, rename a document, delete a document, and perform basic searches across their own documents. Since the actual PDF reader is not being built yet, opening a document may lead to a simple temporary document surface that clearly represents the future reader route, but do not create a fake PDF reader or pretend that document reading is already implemented.
+Most PDF readers are built to display pages. Most note-taking apps are built to organise thoughts. Reeda sits in the gap between them: the place where you are actively reading something and actively responding to it, and you need both activities to happen without friction.
 
-Build a small storage service abstraction from the beginning. The rest of the application must not directly depend on Lovable Cloud storage APIs. The document library and future PDF reader should interact with a storage service rather than with the underlying storage implementation. For this build, only Reeda Storage needs to be implemented. Keep the abstraction deliberately simple so that Google Drive and Microsoft OneDrive can later be implemented as additional storage providers without changing the document library or PDF reader. Do not build those providers yet and do not create fake connection experiences for them.
+The project values essentialism over comprehensiveness. Every element in the interface should earn its place. If something can be removed without harming the reading experience, it probably should be.
 
-Allow users to upload PDF files from their device and store them privately in Lovable Cloud storage. Validate that uploaded files are PDFs, create the corresponding document record after successful upload, and associate the document with the authenticated user. Establish a configurable managed-storage allowance of 500 MB per user. Do not create a permanent quota indicator or storage dashboard. Storage information should only become visible later when it is genuinely relevant to the user.
+## Architecture
 
-Uploaded files must remain private. Do not create unnecessary public URLs. Use authenticated access and appropriate storage rules so one user cannot access another user's files. Handle upload failures cleanly and provide human-readable feedback without exposing raw backend errors or implementation details.
+Reeda is a server-rendered React application using [TanStack Start](https://tanstack.com/start) as the full-stack framework, with [Vite](https://vite.dev) as the build tool and dev server.
 
-Create functional `/privacy` and `/terms` routes because the authentication interface will reference them. These pages may contain clearly marked draft content that requires legal review before public launch. Keep them readable and consistent with the Reeda visual system. Do not create a privacy dashboard or a complicated legal interface in this build.
+| Layer | Technology | Role |
+|---|---|---|
+| Framework | TanStack Start + TanStack Router | File-based routing, SSR, server functions, CSRF protection |
+| UI | React 19, Tailwind CSS 4 | Component rendering and styling |
+| PDF rendering | pdf.js | Canvas-based page rendering with text layer overlay |
+| Notes editor | Tiptap (ProseMirror) + tiptap-markdown | Rich-text editing with Markdown serialisation |
+| Split pane | react-resizable-panels | Draggable divider between PDF and notes |
+| Database | Supabase (PostgreSQL) | User profiles, document metadata, notes content |
+| File storage | Supabase Storage | PDF file storage with signed URLs and per-user isolation |
+| Authentication | Supabase Auth | OAuth providers, email/password, phone OTP |
+| Data fetching | TanStack Query | Client-side caching, query invalidation, optimistic updates |
+| Deployment | Nitro (Cloudflare target) | Edge-compatible server output |
 
-Do not implement PDF rendering, PDF search, text selection, highlighting, underlining, strikethrough, annotations, the rich notes editor, the PDF and notes split view, fullscreen reading, the Word Bank, the Blog, research participation, behavioural analytics, session replay, AI, sharing, collaboration, payments, PDF downloading, user-created bookmarks, or advanced citation functionality. Do not create empty placeholder interfaces for any of those features. Only establish the architectural boundaries that are genuinely necessary for later development.
+The storage layer is built on an abstract `StorageProvider` interface, making it possible to add alternative backends (the type system already accounts for Google Drive and OneDrive) without changing the rest of the application.
 
-Before stopping or pausing this build, test the complete implemented foundation in the actual application. Confirm that authentication works, profile creation works, the document library loads, PDF upload works, the uploaded file is stored privately, the document record persists, rename works, deletion works, refresh does not break the state, and authorization prevents cross-user access.
+Row-level security is enforced at the database level. Every table (profiles, documents, document_notes) and the storage bucket have RLS policies that restrict access to the owning user. The server never trusts client-submitted user IDs for data access.
 
-Most importantly, **do not finish or pause with a broken build**. Run the application, verify the current implementation compiles and runs successfully, and fix any errors introduced during this build before stopping. A partially implemented feature is acceptable when it is intentionally outside this build's scope. A build error is not.
+## Research direction
 
-This project was built with [Lovable](https://lovable.dev).
+Reeda is being developed alongside an ongoing investigation into how people actually read digitally. The research is interested in the full arc of engaged reading: how people navigate documents, what triggers them to highlight or annotate, how they move between the source and their own writing, how search is used during reading (not just for retrieval), and what makes a digital reading session feel focused rather than fragmented.
 
-## Build with Lovable
+The long-term question is broad: *what should digital reading look like?* The project does not assume that today's PDF readers and productivity tools have already answered that question well. Instead, it treats the design of the reading environment as an open problem worth investigating carefully.
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/9a37cecd-17ae-4e16-a02b-aa0ebb44c9d7).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+No formal research findings have been published yet. The product itself is the first artifact of this investigation.
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Reeda uses [Bun](https://bun.sh) as its package manager.
 
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+```bash
+# Clone the repository
+git clone https://github.com/thekzbn/reeda.git
+cd reeda
+
+# Install dependencies
+bun install
+
+# Start the development server
+bun run dev
 ```
+
+The development server runs on `http://localhost:5173` by default.
+
+### Environment variables
+
+The application requires Supabase credentials to function. Create a `.env.local` file with:
+
+```
+VITE_SUPABASE_URL=<your-supabase-url>
+VITE_SUPABASE_PUBLISHABLE_KEY=<your-supabase-anon-key>
+SUPABASE_URL=<your-supabase-url>
+SUPABASE_PUBLISHABLE_KEY=<your-supabase-anon-key>
+```
+
+Never commit secrets to the repository. The `.env.local` file is gitignored.
+
+### Other commands
+
+```bash
+bun run build        # Production build
+bun run preview      # Preview the production build
+bun run lint         # Run ESLint
+bun run format       # Format with Prettier
+```
+
+## Contributing
+
+Reeda is a small project with a specific point of view. Contributions are welcome, especially from people who care about reading, typography, accessibility, or interface design.
+
+Before building something, it helps to understand what Reeda values:
+
+- **Useful UX over feature count.** A small number of things done well matters more than a long feature list.
+- **Essentialism.** If an element does not clearly improve the reading or writing experience, it probably does not belong.
+- **Accessibility.** The workspace should be usable by everyone, including keyboard-only users and screen reader users.
+- **Performance.** PDF rendering and editor interactions should feel immediate. Unnecessary network requests, layout shifts, and heavy bundles are worth avoiding.
+- **Privacy.** User data belongs to the user. Reeda should collect only what it needs and be transparent about it.
+- **Evidence over assumption.** Design decisions should come from observation of real reading behaviour, not from copying conventions.
+
+## Roadmap
+
+These are directions the project is actively considering, not commitments:
+
+- Text highlighting and annotation within the PDF
+- Improved mobile reading experience
+- Alternative storage providers (Google Drive, OneDrive)
+- Export and sharing of notes
+- Keyboard shortcuts reference
+- Accessibility audit and improvements
+
+## Status
+
+Reeda is in early active development. The API, data model, and feature set may change. It is not yet intended for production use with important documents as the sole copy.
+
+A license has not yet been selected for the repository. Until one is added, standard copyright applies.
+
+## Links
+
+- [Website](https://reeda.lovable.app/welcome)
+- [Privacy](/privacy)
+- [Terms](/terms)
+- [GitHub](https://github.com/thekzbn/reeda)
