@@ -4,7 +4,10 @@ export const Route = createFileRoute("/terms")({
   head: () => ({
     meta: [
       { title: "Terms | Reeda" },
-      { name: "description", content: "The terms that apply when you use Reeda to read and store PDFs." },
+      {
+        name: "description",
+        content: "The terms that apply when you use Reeda to read and store PDFs.",
+      },
       { property: "og:title", content: "Terms | Reeda" },
       {
         property: "og:description",
@@ -37,8 +40,8 @@ function Terms() {
         <section>
           <h2 className="text-base font-medium">Your content</h2>
           <p className="mt-2 text-muted-foreground">
-            You keep ownership of everything you upload. You give Reeda only the permission needed to
-            store your files and show them back to you.
+            You keep ownership of everything you upload. You give Reeda only the permission needed
+            to store your files and show them back to you.
           </p>
         </section>
         <section>

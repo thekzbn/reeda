@@ -17,7 +17,11 @@ export async function getMyProfile(): Promise<Profile | null> {
   const user = userData.user;
   if (!user) return null;
 
-  const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .maybeSingle();
   if (error) return null;
 
   if (!data) {

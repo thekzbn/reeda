@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 
-export function AppHeader({ email }: { email?: string | null }) {
+export function AppHeader({ email }: { email?: string | null | undefined }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 

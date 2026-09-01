@@ -9,14 +9,16 @@ If you reach the point where the planned functionality is complete but the appli
 Reeda should feel like a serious reading tool rather than a typical SaaS application. Use Inter throughout the application with the following setup:
 
 ```html id="q6g8fn"
-<link rel="preconnect" href="https://rsms.me/">
-<link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+<link rel="preconnect" href="https://rsms.me/" />
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
 ```
 
 ```css id="6j3m0o"
 :root {
   font-family: Inter, sans-serif;
-  font-feature-settings: 'liga' 1, 'calt' 1;
+  font-feature-settings:
+    "liga" 1,
+    "calt" 1;
 }
 
 @supports (font-variation-settings: normal) {

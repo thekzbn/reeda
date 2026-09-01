@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getMyProfile, saveProfileSetup } from "@/lib/profile";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -91,20 +91,23 @@ function Group({ title, children }: { title: string; children: React.ReactNode }
 
 function Onboarding() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [role, setRole] = useState("");
   const [field, setField] = useState("");
   const [purpose, setPurpose] = useState("");
   const [materials, setMaterials] = useState<string[]>([]);
   const [tools, setTools] = useState<string[]>([]);
 
-  useQuery({
+  const profile = useQuery({
     queryKey: ["profile"],
-    queryFn: async () => {
-      const profile = await getMyProfile();
-      if (profile?.onboarding_completed) navigate({ to: "/", replace: true });
-      return profile;
-    },
+    queryFn: getMyProfile,
   });
+
+  useEffect(() => {
+    if (profile.data?.onboarding_completed) {
+      navigate({ to: "/", replace: true });
+    }
+  }, [profile.data, navigate]);
 
   const toggle = (list: string[], set: (v: string[]) => void, value: string) =>
     set(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
@@ -118,7 +121,10 @@ function Onboarding() {
         reading_types: materials,
         current_tools: tools,
       }),
-    onSuccess: () => navigate({ to: "/", replace: true }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["profile"] });
+      navigate({ to: "/", replace: true });
+    },
     onError: (error: Error) => toast.error(error.message),
   });
 

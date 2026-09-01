@@ -29,10 +29,7 @@ async function requireUserId(): Promise<string> {
 }
 
 export async function listDocuments(search?: string): Promise<DocumentRecord[]> {
-  let query = supabase
-    .from("documents")
-    .select("*")
-    .order("updated_at", { ascending: false });
+  let query = supabase.from("documents").select("*").order("updated_at", { ascending: false });
 
   const term = search?.trim();
   if (term) query = query.ilike("title", `%${term}%`);
@@ -52,8 +49,7 @@ export async function getDocument(id: string): Promise<DocumentRecord> {
 export async function uploadDocument(file: File): Promise<DocumentRecord> {
   const userId = await requireUserId();
 
-  const isPdf =
-    file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+  const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
   if (!isPdf) fail("Only PDF files can be added to your library.");
   if (file.size === 0) fail("That file appears to be empty.");
 
@@ -111,7 +107,10 @@ export async function deleteDocument(doc: DocumentRecord): Promise<void> {
 }
 
 export async function markDocumentOpened(id: string): Promise<void> {
-  await supabase.from("documents").update({ last_opened_at: new Date().toISOString() }).eq("id", id);
+  await supabase
+    .from("documents")
+    .update({ last_opened_at: new Date().toISOString() })
+    .eq("id", id);
 }
 
 export function formatBytes(bytes: number): string {

@@ -4,7 +4,10 @@ export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
       { title: "Privacy | Reeda" },
-      { name: "description", content: "How Reeda handles your account details and the PDFs you upload." },
+      {
+        name: "description",
+        content: "How Reeda handles your account details and the PDFs you upload.",
+      },
       { property: "og:title", content: "Privacy | Reeda" },
       {
         property: "og:description",
@@ -31,8 +34,8 @@ function Privacy() {
           <h2 className="text-base font-medium">What we store</h2>
           <p className="mt-2 text-muted-foreground">
             We store your account identity, the answers you give during profile setup, and the PDF
-            files you choose to upload, along with basic details about them such as title, file size,
-            and when they were last opened.
+            files you choose to upload, along with basic details about them such as title, file
+            size, and when they were last opened.
           </p>
         </section>
         <section>
