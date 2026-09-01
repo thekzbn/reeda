@@ -75,9 +75,10 @@ function Library() {
 
   const rename = useMutation({
     mutationFn: ({ id, title }: { id: string; title: string }) => renameDocument(id, title),
-    onSuccess: () => {
+    onSuccess: (_data, { id }) => {
       setRenaming(null);
       void queryClient.invalidateQueries({ queryKey: ["documents"] });
+      void queryClient.invalidateQueries({ queryKey: ["document", id] });
     },
     onError: (error: Error) => toast.error(error.message),
   });
