@@ -1,0 +1,55 @@
+/* PDF.js Text Layer Styling */
+.pdf-page-container {
+  position: relative;
+  background-color: #ffffff;
+  box-sizing: content-box;
+}
+
+.pdf-page-container canvas {
+  display: block;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.pdf-page-container .textLayer {
+  position: absolute;
+  text-align: initial;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  opacity: 1;
+  line-height: 1;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  z-index: 2;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.pdf-page-container .textLayer span,
+.pdf-page-container .textLayer br {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+.pdf-page-container .textLayer ::selection {
+  background: color-mix(in oklch, var(--primary) 30%, transparent);
+  color: transparent;
+}
+
+.pdf-page-container .textLayer .search-highlight {
+  background-color: color-mix(in oklch, var(--primary) 25%, transparent);
+  border-radius: 2px;
+}
+
+.pdf-page-container .textLayer .search-highlight-active {
+  background-color: color-mix(in oklch, var(--primary) 55%, transparent);
+  outline: 1.5px solid var(--primary);
+  border-radius: 2px;
+}

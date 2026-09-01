@@ -1,0 +1,292 @@
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { usePdfDocument } from "./use-pdf-document";
+import { usePdfSearch } from "./use-pdf-search";
+import { PdfPage } from "./PdfPage";
+import { ReaderHeader } from "./ReaderHeader";
+import { TableOfContents } from "./TableOfContents";
+import { SearchBar } from "./SearchBar";
+import type { ZoomMode } from "./types";
+import "./pdf-text-layer.css";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Link } from "@tanstack/react-router";
+
+interface PdfReaderProps {
+  documentUrl: string;
+  title: string;
+  documentId: string;
+}
+
+export function PdfReader({ documentUrl, title }: PdfReaderProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [scale, setScale] = useState<number>(1.0);
+  const [zoomMode, setZoomMode] = useState<ZoomMode>("fit-width");
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [isTocOpen, setIsTocOpen] = useState<boolean>(false);
+
+  const { pdfDoc, totalPages, outline, firstPageDimension, isLoading, error } =
+    usePdfDocument(documentUrl);
+
+  const handleNavigateToPage = useCallback(
+    (pageNumber: number) => {
+      const clamped = Math.max(1, Math.min(pageNumber, totalPages || 1));
+      setCurrentPage(clamped);
+
+      const targetEl = scrollContainerRef.current?.querySelector(`[data-page-number="${clamped}"]`);
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    },
+    [totalPages],
+  );
+
+  const {
+    matches,
+    currentMatchIndex,
+    totalMatches,
+    isSearching,
+    activeMatch,
+    nextMatch,
+    prevMatch,
+  } = usePdfSearch(pdfDoc, searchQuery, handleNavigateToPage);
+
+  // Compute fit scale
+  const computeFitScale = useCallback(
+    (mode: ZoomMode): number => {
+      if (!scrollContainerRef.current || !firstPageDimension) return 1.0;
+      const containerWidth = scrollContainerRef.current.clientWidth - 48; // padding
+      const containerHeight = scrollContainerRef.current.clientHeight - 48;
+
+      if (containerWidth <= 0 || firstPageDimension.width <= 0) return 1.0;
+
+      if (mode === "fit-width") {
+        const calculated = containerWidth / firstPageDimension.width;
+        return Math.min(Math.max(calculated, 0.4), 2.5);
+      }
+
+      if (mode === "fit-page") {
+        const scaleW = containerWidth / firstPageDimension.width;
+        const scaleH = containerHeight / firstPageDimension.height;
+        const calculated = Math.min(scaleW, scaleH);
+        return Math.min(Math.max(calculated, 0.4), 2.5);
+      }
+
+      return scale;
+    },
+    [firstPageDimension, scale],
+  );
+
+  // Initial fit-width calculation once firstPageDimension is loaded
+  useEffect(() => {
+    if (firstPageDimension && zoomMode === "fit-width") {
+      const newScale = computeFitScale("fit-width");
+      setScale(newScale);
+    }
+  }, [firstPageDimension, computeFitScale, zoomMode]);
+
+  // Recalculate zoom on container resize if in fit mode
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver(() => {
+      if (zoomMode === "fit-width" || zoomMode === "fit-page") {
+        setScale(computeFitScale(zoomMode));
+      }
+    });
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [zoomMode, computeFitScale]);
+
+  // Track fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(document.fullscreenElement !== null);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  // Keyboard navigation & search shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      } else if (e.key === "Escape") {
+        if (isSearchOpen) {
+          setIsSearchOpen(false);
+          setSearchQuery("");
+        } else if (isTocOpen) {
+          setIsTocOpen(false);
+        }
+      } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
+        e.preventDefault();
+        handleNavigateToPage(currentPage - 1);
+      } else if (e.key === "ArrowRight" || e.key === "PageDown") {
+        e.preventDefault();
+        handleNavigateToPage(currentPage + 1);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSearchOpen, isTocOpen, currentPage, handleNavigateToPage]);
+
+  // Zoom handlers
+  const handleZoomIn = () => {
+    setZoomMode("custom");
+    setScale((prev) => Math.min(prev + 0.25, 3.0));
+  };
+
+  const handleZoomOut = () => {
+    setZoomMode("custom");
+    setScale((prev) => Math.max(prev - 0.25, 0.4));
+  };
+
+  const handleZoomSelect = (newScale: number) => {
+    setZoomMode("custom");
+    setScale(newScale);
+  };
+
+  const handleFitWidth = () => {
+    setZoomMode("fit-width");
+    setScale(computeFitScale("fit-width"));
+  };
+
+  const handleFitPage = () => {
+    setZoomMode("fit-page");
+    setScale(computeFitScale("fit-page"));
+  };
+
+  const handleToggleFullscreen = () => {
+    if (!containerRef.current) return;
+    if (!document.fullscreenElement) {
+      void containerRef.current.requestFullscreen();
+    } else {
+      void document.exitFullscreen();
+    }
+  };
+
+  const pagesArray = useMemo(() => {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }, [totalPages]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center bg-background px-6">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <p className="mt-4 text-sm font-medium text-foreground">{title}</p>
+        <p className="mt-1 text-xs text-muted-foreground">Loading document</p>
+      </div>
+    );
+  }
+
+  if (error || !pdfDoc) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center bg-background px-6 text-center">
+        <h1 className="text-xl font-semibold">We could not open this document</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {error || "The file could not be read."}
+        </p>
+        <div className="mt-6">
+          <Link
+            to="/"
+            className="squircle inline-flex h-9 items-center justify-center bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Back to library
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative flex h-screen w-full flex-col overflow-hidden bg-muted/40 font-sans"
+    >
+      <ReaderHeader
+        title={title}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        scale={scale}
+        zoomMode={zoomMode}
+        isFullscreen={isFullscreen}
+        hasOutline={outline !== null && outline.length > 0}
+        isTocOpen={isTocOpen}
+        isSearchOpen={isSearchOpen}
+        onPageChange={handleNavigateToPage}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        onZoomSelect={handleZoomSelect}
+        onFitWidth={handleFitWidth}
+        onFitPage={handleFitPage}
+        onToggleToc={() => setIsTocOpen((prev) => !prev)}
+        onToggleSearch={() => {
+          setIsSearchOpen((prev) => {
+            if (prev) setSearchQuery("");
+            return !prev;
+          });
+        }}
+        onToggleFullscreen={handleToggleFullscreen}
+      />
+
+      <TableOfContents
+        outline={outline}
+        isOpen={isTocOpen}
+        onClose={() => setIsTocOpen(false)}
+        onNavigateToPage={handleNavigateToPage}
+      />
+
+      <SearchBar
+        query={searchQuery}
+        onQueryChange={setSearchQuery}
+        isOpen={isSearchOpen}
+        onClose={() => {
+          setIsSearchOpen(false);
+          setSearchQuery("");
+        }}
+        currentMatchIndex={currentMatchIndex}
+        totalMatches={totalMatches}
+        isSearching={isSearching}
+        onNextMatch={nextMatch}
+        onPrevMatch={prevMatch}
+      />
+
+      {/* Main PDF Scroll View */}
+      <main
+        ref={scrollContainerRef}
+        className="relative flex-1 overflow-y-auto overflow-x-auto p-4 sm:p-6"
+      >
+        <div className="mx-auto flex flex-col items-center">
+          {pagesArray.map((pageNum) => (
+            <PdfPage
+              key={pageNum}
+              pageNumber={pageNum}
+              pdfDoc={pdfDoc}
+              scale={scale}
+              searchQuery={searchQuery}
+              activeMatch={activeMatch}
+              onPageVisible={(visiblePage) => {
+                setCurrentPage(visiblePage);
+              }}
+            />
+          ))}
+        </div>
+      </main>
+    </div>
+  );
+}

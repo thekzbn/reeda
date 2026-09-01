@@ -1,51 +1,120 @@
 import { useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { formatBytes, getDocument, markDocumentOpened } from "@/lib/documents";
+import { getDocument, markDocumentOpened } from "@/lib/documents";
+import { getStorageProvider, type StorageProviderId } from "@/lib/storage";
+import { PdfReader } from "@/components/reader/PdfReader";
+import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/documents/$documentId")({
+  head: () => ({
+    meta: [
+      { title: "Reader | Reeda" },
+      { name: "description", content: "A quiet place to read and work with your PDFs." },
+      { property: "og:title", content: "Reader | Reeda" },
+      {
+        property: "og:description",
+        content: "A quiet place to read and work with your PDFs.",
+      },
+    ],
+  }),
   component: DocumentPage,
 });
 
 function DocumentPage() {
   const { documentId } = Route.useParams();
 
-  const document = useQuery({
+  const documentQuery = useQuery({
     queryKey: ["document", documentId],
     queryFn: () => getDocument(documentId),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const fileUrlQuery = useQuery({
+    queryKey: [
+      "document-url",
+      documentQuery.data?.storage_provider,
+      documentQuery.data?.storage_ref,
+    ],
+    queryFn: async () => {
+      if (!documentQuery.data) return null;
+      const storage = getStorageProvider(documentQuery.data.storage_provider as StorageProviderId);
+      return await storage.getReadUrl(documentQuery.data.storage_ref);
+    },
+    enabled: !!documentQuery.data,
+    staleTime: 1000 * 60 * 8, // Signed URL is valid for 10 minutes
   });
 
   useEffect(() => {
-    if (document.data) void markDocumentOpened(documentId);
-  }, [document.data, documentId]);
+    if (documentQuery.data) {
+      void markDocumentOpened(documentId);
+    }
+  }, [documentQuery.data, documentId]);
+
+  if (documentQuery.isLoading || (documentQuery.data && fileUrlQuery.isLoading)) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center bg-background px-6">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <p className="mt-4 text-sm font-medium text-foreground">
+          {documentQuery.data?.title ?? "Loading document"}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">Preparing reader</p>
+      </div>
+    );
+  }
+
+  if (documentQuery.error || fileUrlQuery.error) {
+    const message =
+      documentQuery.error instanceof Error
+        ? documentQuery.error.message
+        : fileUrlQuery.error instanceof Error
+          ? fileUrlQuery.error.message
+          : "We could not open this document.";
+
+    return (
+      <main className="mx-auto max-w-3xl px-6 py-12">
+        <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
+          Library
+        </Link>
+        <h1 className="mt-8 text-xl font-semibold">Unable to open document</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{message}</p>
+        <div className="mt-6">
+          <Link
+            to="/"
+            className="squircle inline-flex h-9 items-center justify-center bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Back to library
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  if (!documentQuery.data || !fileUrlQuery.data) {
+    return (
+      <main className="mx-auto max-w-3xl px-6 py-12">
+        <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
+          Library
+        </Link>
+        <h1 className="mt-8 text-xl font-semibold">Document not found</h1>
+        <p className="mt-2 text-sm text-muted-foreground">That document is not available.</p>
+        <div className="mt-6">
+          <Link
+            to="/"
+            className="squircle inline-flex h-9 items-center justify-center bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Back to library
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
-      <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
-        Library
-      </Link>
-
-      {document.isLoading ? (
-        <p className="mt-10 text-[15px] text-muted-foreground">Loading</p>
-      ) : document.error ? (
-        <p className="mt-10 text-[15px] text-muted-foreground">
-          {(document.error as Error).message}
-        </p>
-      ) : document.data ? (
-        <>
-          <h1 className="mt-8 text-2xl font-semibold">{document.data.title}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            PDF · {formatBytes(Number(document.data.file_size))} · added{" "}
-            {new Date(document.data.created_at).toLocaleDateString()}
-          </p>
-          <div className="mt-10 border-t border-border pt-10">
-            <p className="text-[15px] text-muted-foreground">
-              The reading surface for this document is not built yet. Your file is stored privately
-              and will open here.
-            </p>
-          </div>
-        </>
-      ) : null}
-    </main>
+    <PdfReader
+      documentUrl={fileUrlQuery.data}
+      title={documentQuery.data.title}
+      documentId={documentQuery.data.id}
+    />
   );
 }
