@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { PDFDocumentProxy } from "pdfjs-dist";
-import { pdfjsLib } from "./pdf-worker";
+import { pdfjsLib, PDFJS_VERSION, WORKER_SRC } from "./pdf-worker";
 import type { OutlineItem, PageDimension } from "./types";
 
 interface UsePdfDocumentResult {
@@ -30,10 +30,14 @@ export function usePdfDocument(url: string | null): UsePdfDocumentResult {
     setIsLoading(true);
     setError(null);
 
+    if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_SRC;
+    }
+
     const loadingTask = pdfjsLib.getDocument({
       url,
       withCredentials: false,
-      cMapUrl: "https://unpkg.com/pdfjs-dist@4.10.38/cmaps/",
+      cMapUrl: `https://unpkg.com/pdfjs-dist@${PDFJS_VERSION}/cmaps/`,
       cMapPacked: true,
     });
 
