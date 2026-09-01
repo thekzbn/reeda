@@ -11,6 +11,24 @@ export interface DocumentNote {
 
 export class NoteError extends Error {}
 
+const DEFAULT_TEST_NOTE = `# Reading Notes: System Design & Architecture
+
+## Key Insights
+- Reeda focuses on **calm, distraction-free** document reading and synthesis.
+- The interface emphasizes clean typography, independent scroll panes, and high-performance canvas rendering.
+
+### Methodology
+1. Read the source PDF in the left pane.
+2. Select key quotes or text passages and click **Add to notes**.
+3. Synthesize findings in the notes editor on the right.
+
+### Checklist
+- [x] Test continuous zoom and fit modes
+- [x] Test divider drag resize
+- [x] Test live search highlighting
+- [ ] Complete synthesis summary
+`;
+
 async function requireUserId(): Promise<string> {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) throw new NoteError("Your session has expired. Please sign in again.");
@@ -19,6 +37,14 @@ async function requireUserId(): Promise<string> {
 
 /** Returns the stored Markdown for a document, or an empty string when none exists yet. */
 export async function getDocumentNote(documentId: string): Promise<string> {
+  if (documentId === "test-fixture-document") {
+    if (typeof window !== "undefined") {
+      const local = window.localStorage.getItem("reeda-test-note");
+      return local !== null ? local : DEFAULT_TEST_NOTE;
+    }
+    return DEFAULT_TEST_NOTE;
+  }
+
   const { data, error } = await supabase
     .from("document_notes")
     .select("content")
@@ -31,6 +57,13 @@ export async function getDocumentNote(documentId: string): Promise<string> {
 
 /** Creates or updates the Markdown note attached to a document. */
 export async function saveDocumentNote(documentId: string, content: string): Promise<void> {
+  if (documentId === "test-fixture-document") {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("reeda-test-note", content);
+    }
+    return;
+  }
+
   const userId = await requireUserId();
 
   const { error } = await supabase

@@ -389,14 +389,15 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
             className="h-full"
             onLayoutChanged={() => setIsDraggingDivider(false)}
           >
-            <ResizablePanel defaultSize={58} minSize={30} maxSize={75}>
+            <ResizablePanel id="pdf-panel" defaultSize="58%" minSize="30%" maxSize="75%">
               {pdfPane}
             </ResizablePanel>
             <ResizableHandle
+              id="split-handle"
               onMouseDown={() => setIsDraggingDivider(true)}
               onTouchStart={() => setIsDraggingDivider(true)}
             />
-            <ResizablePanel defaultSize={42} minSize={25} maxSize={70}>
+            <ResizablePanel id="notes-panel" defaultSize="42%" minSize="25%" maxSize="70%">
               {notesPane}
             </ResizablePanel>
           </ResizablePanelGroup>

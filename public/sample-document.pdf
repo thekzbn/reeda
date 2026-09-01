@@ -1,0 +1,218 @@
+%PDF-1.4
+%âãÏÓ
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+3 0 obj
+<<
+  /Type /Pages
+  /Kids [4 0 R 6 0 R 8 0 R]
+  /Count 3
+>>
+endobj
+4 0 obj
+<< /Length 796 >>
+stream
+BT
+/F2 18 Tf
+50 750 Td
+(Reeda Reading Experience - System Design) Tj
+ET
+BT
+/F1 10 Tf
+50 725 Td
+(Page 1 of 3 - Reeda Test Fixture) Tj
+ET
+BT
+/F1 12 Tf
+50 680 Td
+16 TL
+(Welcome to the Reeda reading environment. This document is a test) Tj
+T*
+(fixture designed to verify page rendering, typography, text selection,) Tj
+T*
+(and in-document search.) Tj
+ET
+BT
+/F1 12 Tf
+50 608 Td
+16 TL
+(Reeda focuses on deep work with text documents and research papers. It) Tj
+T*
+(provides an uncluttered interface without visual noise, floating) Tj
+T*
+(cards, or excessive decorative elements.) Tj
+ET
+BT
+/F1 12 Tf
+50 536 Td
+16 TL
+(The reading surface supports continuous scrolling, high-DPI canvas) Tj
+T*
+(rendering, and selectable text layers for copying citations directly) Tj
+T*
+(into your notes workspace.) Tj
+ET
+
+endstream
+endobj
+5 0 obj
+<<
+  /Type /Page
+  /Parent 3 0 R
+  /MediaBox [0 0 595.28 841.89]
+  /Contents 3 0 R
+  /Resources <<
+    /Font <<
+      /F1 1 0 R
+      /F2 2 0 R
+    >>
+  >>
+>>
+endobj
+6 0 obj
+<< /Length 721 >>
+stream
+BT
+/F2 18 Tf
+50 750 Td
+(In-Document Text Search and Match Navigation) Tj
+ET
+BT
+/F1 10 Tf
+50 725 Td
+(Page 2 of 3 - Reeda Test Fixture) Tj
+ET
+BT
+/F1 12 Tf
+50 680 Td
+16 TL
+(The search subsystem scans every page in the loaded document and) Tj
+T*
+(highlights exact word matches on the active text layer.) Tj
+ET
+BT
+/F1 12 Tf
+50 624 Td
+16 TL
+(Use Ctrl+F \(or Cmd+F on macOS\) to open the search bar. You can) Tj
+T*
+(navigate between occurrences with the next and previous match buttons) Tj
+T*
+(or with Enter and Shift+Enter.) Tj
+ET
+BT
+/F1 12 Tf
+50 552 Td
+16 TL
+(Try searching for terms such as 'workspace', 'typography',) Tj
+T*
+('rendering', or 'notes' to test live text layer highlighting across) Tj
+T*
+(multiple pages.) Tj
+ET
+
+endstream
+endobj
+7 0 obj
+<<
+  /Type /Page
+  /Parent 3 0 R
+  /MediaBox [0 0 595.28 841.89]
+  /Contents 5 0 R
+  /Resources <<
+    /Font <<
+      /F1 1 0 R
+      /F2 2 0 R
+    >>
+  >>
+>>
+endobj
+8 0 obj
+<< /Length 729 >>
+stream
+BT
+/F2 18 Tf
+50 750 Td
+(Side-by-Side Notes Workspace and Divider) Tj
+ET
+BT
+/F1 10 Tf
+50 725 Td
+(Page 3 of 3 - Reeda Test Fixture) Tj
+ET
+BT
+/F1 12 Tf
+50 680 Td
+16 TL
+(The notes workspace allows readers to write, synthesize ideas, and) Tj
+T*
+(format findings while keeping the source PDF immediately in view.) Tj
+ET
+BT
+/F1 12 Tf
+50 624 Td
+16 TL
+(The horizontal divider between the PDF and the notes panes can be) Tj
+T*
+(grabbed and dragged continuously to adjust pane proportions to your) Tj
+T*
+(reading or writing preference.) Tj
+ET
+BT
+/F1 12 Tf
+50 552 Td
+16 TL
+(You can also select any sentence from the PDF and click the floating) Tj
+T*
+(Add to notes button to insert the excerpt directly into your notes) Tj
+T*
+(editor.) Tj
+ET
+
+endstream
+endobj
+9 0 obj
+<<
+  /Type /Page
+  /Parent 3 0 R
+  /MediaBox [0 0 595.28 841.89]
+  /Contents 7 0 R
+  /Resources <<
+    /Font <<
+      /F1 1 0 R
+      /F2 2 0 R
+    >>
+  >>
+>>
+endobj
+9 0 obj
+<<
+  /Type /Catalog
+  /Pages 3 0 R
+>>
+endobj
+xref
+0 11
+0000000000 65535 f 
+0000000019 00000 n 
+0000000089 00000 n 
+0000000164 00000 n 
+0000000239 00000 n 
+0000001086 00000 n 
+0000001260 00000 n 
+0000002032 00000 n 
+0000002206 00000 n 
+0000003160 00000 n 
+0undefined 00000 n 
+trailer
+<<
+  /Size 11
+  /Root 9 0 R
+>>
+startxref
+3213
+%%EOF
