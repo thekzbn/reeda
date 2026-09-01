@@ -2,7 +2,7 @@
 
 A digital reading environment where the source document and the reader's own thinking live together in one workspace.
 
-Reeda is being built around a question that most reading tools skip over: *what should reading digitally actually look like?* Rather than starting with a feature list and working backwards, the project begins by observing how people really read, highlight, search, and write when they are engaging with a document carefully. The design follows from those observations, not from assumptions about what a PDF reader should be.
+Reeda is being built around a question that most reading tools skip over: _what should reading digitally actually look like?_ Rather than starting with a feature list and working backwards, the project begins by observing how people really read, highlight, search, and write when they are engaging with a document carefully. The design follows from those observations, not from assumptions about what a PDF reader should be.
 
 The core idea is simple. When you read something that matters, you do not consume it passively and then go somewhere else to think. You pause, underline a phrase, and start forming a response while the source is still in front of you. Reading and thinking happen in the same moment. Reeda tries to preserve that by keeping the document and the reader's notes side by side in a single calm workspace, without forcing a switch between tools.
 
@@ -34,18 +34,18 @@ The project values essentialism over comprehensiveness. Every element in the int
 
 Reeda is a server-rendered React application using [TanStack Start](https://tanstack.com/start) as the full-stack framework, with [Vite](https://vite.dev) as the build tool and dev server.
 
-| Layer | Technology | Role |
-|---|---|---|
-| Framework | TanStack Start + TanStack Router | File-based routing, SSR, server functions, CSRF protection |
-| UI | React 19, Tailwind CSS 4 | Component rendering and styling |
-| PDF rendering | pdf.js | Canvas-based page rendering with text layer overlay |
-| Notes editor | Tiptap (ProseMirror) + tiptap-markdown | Rich-text editing with Markdown serialisation |
-| Split pane | react-resizable-panels | Draggable divider between PDF and notes |
-| Database | Supabase (PostgreSQL) | User profiles, document metadata, notes content |
-| File storage | Supabase Storage | PDF file storage with signed URLs and per-user isolation |
-| Authentication | Supabase Auth | OAuth providers, email/password, phone OTP |
-| Data fetching | TanStack Query | Client-side caching, query invalidation, optimistic updates |
-| Deployment | Nitro (Cloudflare target) | Edge-compatible server output |
+| Layer          | Technology                             | Role                                                        |
+| -------------- | -------------------------------------- | ----------------------------------------------------------- |
+| Framework      | TanStack Start + TanStack Router       | File-based routing, SSR, server functions, CSRF protection  |
+| UI             | React 19, Tailwind CSS 4               | Component rendering and styling                             |
+| PDF rendering  | pdf.js                                 | Canvas-based page rendering with text layer overlay         |
+| Notes editor   | Tiptap (ProseMirror) + tiptap-markdown | Rich-text editing with Markdown serialisation               |
+| Split pane     | react-resizable-panels                 | Draggable divider between PDF and notes                     |
+| Database       | Supabase (PostgreSQL)                  | User profiles, document metadata, notes content             |
+| File storage   | Supabase Storage                       | PDF file storage with signed URLs and per-user isolation    |
+| Authentication | Supabase Auth                          | OAuth providers, email/password, phone OTP                  |
+| Data fetching  | TanStack Query                         | Client-side caching, query invalidation, optimistic updates |
+| Deployment     | Nitro (Cloudflare target)              | Edge-compatible server output                               |
 
 The storage layer is built on an abstract `StorageProvider` interface, making it possible to add alternative backends (the type system already accounts for Google Drive and OneDrive) without changing the rest of the application.
 
@@ -55,7 +55,7 @@ Row-level security is enforced at the database level. Every table (profiles, doc
 
 Reeda is being developed alongside an ongoing investigation into how people actually read digitally. The research is interested in the full arc of engaged reading: how people navigate documents, what triggers them to highlight or annotate, how they move between the source and their own writing, how search is used during reading (not just for retrieval), and what makes a digital reading session feel focused rather than fragmented.
 
-The long-term question is broad: *what should digital reading look like?* The project does not assume that today's PDF readers and productivity tools have already answered that question well. Instead, it treats the design of the reading environment as an open problem worth investigating carefully.
+The long-term question is broad: _what should digital reading look like?_ The project does not assume that today's PDF readers and productivity tools have already answered that question well. Instead, it treats the design of the reading environment as an open problem worth investigating carefully.
 
 No formal research findings have been published yet. The product itself is the first artifact of this investigation.
 

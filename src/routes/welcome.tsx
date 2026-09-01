@@ -8,14 +8,12 @@ export const Route = createFileRoute("/welcome")({
       { title: "reeda" },
       {
         name: "description",
-        content:
-          "A reading environment where the source and your thinking live together.",
+        content: "A reading environment where the source and your thinking live together.",
       },
       { property: "og:title", content: "reeda" },
       {
         property: "og:description",
-        content:
-          "A reading environment where the source and your thinking live together.",
+        content: "A reading environment where the source and your thinking live together.",
       },
     ],
   }),
@@ -42,10 +40,7 @@ function LandingPage() {
     <div className="min-h-screen">
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 pt-6 sm:px-10 sm:pt-8">
-        <span
-          className="text-[15px] font-semibold tracking-tight"
-          style={{ color: "#6A5ACD" }}
-        >
+        <span className="text-[15px] font-semibold tracking-tight" style={{ color: "#6A5ACD" }}>
           reeda
         </span>
         <Link
@@ -90,16 +85,10 @@ function LandingPage() {
             reeda
           </span>
           <div className="flex gap-4">
-            <Link
-              to="/terms"
-              className="underline underline-offset-2 hover:text-foreground"
-            >
+            <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">
               Terms
             </Link>
-            <Link
-              to="/privacy"
-              className="underline underline-offset-2 hover:text-foreground"
-            >
+            <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
               Privacy
             </Link>
           </div>
