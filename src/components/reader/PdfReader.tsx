@@ -5,6 +5,13 @@ import { PdfPage } from "./PdfPage";
 import { ReaderHeader } from "./ReaderHeader";
 import { TableOfContents } from "./TableOfContents";
 import { SearchBar } from "./SearchBar";
+import { NotesPane } from "./NotesPane";
+import type { NotesEditorHandle } from "./NotesEditor";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
 import type { ZoomMode } from "./types";
 import "./pdf-text-layer.css";
 import { Loader2 } from "lucide-react";
@@ -17,9 +24,10 @@ interface PdfReaderProps {
   documentId: string;
 }
 
-export function PdfReader({ documentUrl, title }: PdfReaderProps) {
+export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const notesRef = useRef<NotesEditorHandle>(null);
 
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.0);
@@ -28,9 +36,14 @@ export function PdfReader({ documentUrl, title }: PdfReaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isTocOpen, setIsTocOpen] = useState<boolean>(false);
+  const [isNotesOpen, setIsNotesOpen] = useState<boolean>(true);
+  const [isDesktop, setIsDesktop] = useState<boolean>(true);
+  const [mobileView, setMobileView] = useState<"pdf" | "notes">("pdf");
+  const [selection, setSelection] = useState<{ text: string; x: number; y: number } | null>(null);
 
   const { pdfDoc, totalPages, outline, firstPageDimension, isLoading, error } =
     usePdfDocument(documentUrl);
+
 
   const handleNavigateToPage = useCallback(
     (pageNumber: number) => {
