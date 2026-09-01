@@ -83,10 +83,6 @@ export const NotesPane = forwardRef<NotesEditorHandle, NotesPaneProps>(function 
   }
 
   return (
-    <NotesEditor
-      ref={ref}
-      initialMarkdown={noteQuery.data ?? ""}
-      onChangeMarkdown={handleChange}
-    />
+    <NotesEditor ref={ref} initialMarkdown={noteQuery.data ?? ""} onChangeMarkdown={handleChange} />
   );
 });

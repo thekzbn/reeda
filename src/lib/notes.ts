@@ -35,10 +35,7 @@ export async function saveDocumentNote(documentId: string, content: string): Pro
 
   const { error } = await supabase
     .from("document_notes")
-    .upsert(
-      { document_id: documentId, user_id: userId, content },
-      { onConflict: "document_id" },
-    );
+    .upsert({ document_id: documentId, user_id: userId, content }, { onConflict: "document_id" });
 
   if (error) throw new NoteError("We could not save your notes right now.");
 }

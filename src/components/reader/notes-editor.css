@@ -3,7 +3,7 @@
   min-height: 100%;
   font-size: 15px;
   line-height: 1.7;
-  color: hsl(var(--foreground));
+  color: var(--foreground);
 }
 
 .notes-editor .ProseMirror > * + * {

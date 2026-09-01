@@ -64,7 +64,7 @@ function Toolbar({ editor }: { editor: Editor }) {
   const chain = () => editor.chain().focus();
 
   const setLink = () => {
-    const previous = editor.getAttributes("link").href as string | undefined;
+    const previous = editor.getAttributes("link")["href"] as string | undefined;
     const url = window.prompt("Link address", previous ?? "https://");
     if (url === null) return;
     if (url.trim() === "") {
@@ -172,8 +172,9 @@ export const NotesEditor = forwardRef<NotesEditorHandle, NotesEditorProps>(funct
         class: "px-5 py-5 sm:px-7 sm:py-6",
       },
     },
-    onUpdate: ({ editor: current }) => {
-      const markdown = current.storage.markdown.getMarkdown() as string;
+    onUpdate: ({ editor: current }: { editor: Editor }) => {
+      const storage = current.storage["markdown"] as { getMarkdown: () => string } | undefined;
+      const markdown = storage ? storage.getMarkdown() : current.getText();
       onChangeRef.current(markdown);
     },
     onSelectionUpdate: () => forceRender((n) => n + 1),
@@ -182,12 +183,12 @@ export const NotesEditor = forwardRef<NotesEditorHandle, NotesEditorProps>(funct
 
   useEffect(() => {
     if (!editor) return;
-    const current = editor.storage.markdown.getMarkdown() as string;
+    const storage = editor.storage["markdown"] as { getMarkdown: () => string } | undefined;
+    const current = storage ? storage.getMarkdown() : editor.getText();
     if (initialMarkdown !== current) {
-      editor.commands.setContent(initialMarkdown, { emitUpdate: false });
+      editor.commands.setContent(initialMarkdown, false);
     }
     // Only reset when a different stored note arrives.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, initialMarkdown]);
 
   useImperativeHandle(

@@ -7,11 +7,7 @@ import { TableOfContents } from "./TableOfContents";
 import { SearchBar } from "./SearchBar";
 import { NotesPane } from "./NotesPane";
 import type { NotesEditorHandle } from "./NotesEditor";
-import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from "@/components/ui/resizable";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import type { ZoomMode } from "./types";
 import "./pdf-text-layer.css";
 import { Loader2 } from "lucide-react";
@@ -43,7 +39,6 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
 
   const { pdfDoc, totalPages, outline, firstPageDimension, isLoading, error } =
     usePdfDocument(documentUrl);
-
 
   const handleNavigateToPage = useCallback(
     (pageNumber: number) => {
@@ -180,7 +175,6 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
       ) {
         return;
       }
-
 
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
         e.preventDefault();
@@ -377,7 +371,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
 
       <div className="relative min-h-0 flex-1">
         {isDesktop && isNotesOpen ? (
-          <ResizablePanelGroup direction="horizontal" autoSaveId="reeda-reader-split">
+          <ResizablePanelGroup orientation="horizontal" id="reeda-reader-split">
             <ResizablePanel defaultSize={58} minSize={30}>
               {pdfPane}
             </ResizablePanel>
@@ -412,4 +406,3 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
     </div>
   );
 }
-
