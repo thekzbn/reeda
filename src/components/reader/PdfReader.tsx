@@ -273,6 +273,50 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
     );
   }
 
+  const notesVisible = isDesktop ? isNotesOpen : mobileView === "notes";
+  const pdfVisible = isDesktop || mobileView === "pdf";
+
+  const sendSelectionToNotes = () => {
+    if (!selection) return;
+    if (!isDesktop) setMobileView("notes");
+    else setIsNotesOpen(true);
+    const text = selection.text;
+    setSelection(null);
+    window.getSelection()?.removeAllRanges();
+    window.setTimeout(() => notesRef.current?.insertText(text), 0);
+  };
+
+  const pdfPane = (
+    <main
+      ref={scrollContainerRef}
+      className={`relative h-full overflow-y-auto overflow-x-auto bg-muted/40 p-4 sm:p-6 ${
+        pdfVisible ? "" : "hidden"
+      }`}
+    >
+      <div className="mx-auto flex flex-col items-center">
+        {pagesArray.map((pageNum) => (
+          <PdfPage
+            key={pageNum}
+            pageNumber={pageNum}
+            pdfDoc={pdfDoc}
+            scale={scale}
+            searchQuery={searchQuery}
+            activeMatch={activeMatch}
+            onPageVisible={(visiblePage) => {
+              setCurrentPage(visiblePage);
+            }}
+          />
+        ))}
+      </div>
+    </main>
+  );
+
+  const notesPane = (
+    <div className={`h-full min-h-0 ${notesVisible ? "" : "hidden"}`}>
+      <NotesPane ref={notesRef} documentId={documentId} />
+    </div>
+  );
+
   return (
     <div
       ref={containerRef}
@@ -288,6 +332,11 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
         hasOutline={outline !== null && outline.length > 0}
         isTocOpen={isTocOpen}
         isSearchOpen={isSearchOpen}
+        isNotesOpen={notesVisible}
+        onToggleNotes={() => {
+          if (isDesktop) setIsNotesOpen((prev) => !prev);
+          else setMobileView((prev) => (prev === "notes" ? "pdf" : "notes"));
+        }}
         onPageChange={handleNavigateToPage}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
@@ -326,27 +375,41 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
         onPrevMatch={prevMatch}
       />
 
-      {/* Main PDF Scroll View */}
-      <main
-        ref={scrollContainerRef}
-        className="relative flex-1 overflow-y-auto overflow-x-auto p-4 sm:p-6"
-      >
-        <div className="mx-auto flex flex-col items-center">
-          {pagesArray.map((pageNum) => (
-            <PdfPage
-              key={pageNum}
-              pageNumber={pageNum}
-              pdfDoc={pdfDoc}
-              scale={scale}
-              searchQuery={searchQuery}
-              activeMatch={activeMatch}
-              onPageVisible={(visiblePage) => {
-                setCurrentPage(visiblePage);
-              }}
-            />
-          ))}
+      <div className="relative min-h-0 flex-1">
+        {isDesktop && isNotesOpen ? (
+          <ResizablePanelGroup direction="horizontal" autoSaveId="reeda-reader-split">
+            <ResizablePanel defaultSize={58} minSize={30}>
+              {pdfPane}
+            </ResizablePanel>
+            <ResizableHandle className="w-px bg-border transition-colors hover:bg-primary/40 data-[resize-handle-state=drag]:bg-primary/60" />
+            <ResizablePanel defaultSize={42} minSize={25}>
+              {notesPane}
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        ) : (
+          <div className="h-full">
+            {pdfPane}
+            {notesPane}
+          </div>
+        )}
+      </div>
+
+      {selection && pdfVisible ? (
+        <div
+          className="fixed z-40 -translate-x-1/2 -translate-y-full pb-2"
+          style={{ left: selection.x, top: selection.y }}
+        >
+          <Button
+            size="sm"
+            className="squircle h-8 px-3 text-xs"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={sendSelectionToNotes}
+          >
+            Add to notes
+          </Button>
         </div>
-      </main>
+      ) : null}
     </div>
   );
 }
+
