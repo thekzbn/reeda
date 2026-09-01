@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TestRouteImport } from './routes/test'
+import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedDocumentsDocumentIdRouteImport } from './routes/_authenticated/documents.$documentId'
@@ -42,6 +43,11 @@ const TestRoute = TestRouteImport.update({
   path: '/test',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WelcomeRoute = WelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/test': typeof TestRoute
+  '/welcome': typeof WelcomeRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/documents/$documentId': typeof AuthenticatedDocumentsDocumentIdRoute
 }
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/test': typeof TestRoute
+  '/welcome': typeof WelcomeRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/': typeof AuthenticatedIndexRoute
   '/documents/$documentId': typeof AuthenticatedDocumentsDocumentIdRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/test': typeof TestRoute
+  '/welcome': typeof WelcomeRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/documents/$documentId': typeof AuthenticatedDocumentsDocumentIdRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/test'
+    | '/welcome'
     | '/onboarding'
     | '/documents/$documentId'
   fileRoutesByTo: FileRoutesByTo
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/test'
+    | '/welcome'
     | '/onboarding'
     | '/'
     | '/documents/$documentId'
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/terms'
     | '/test'
+    | '/welcome'
     | '/_authenticated/onboarding'
     | '/_authenticated/'
     | '/_authenticated/documents/$documentId'
@@ -125,6 +137,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
   TestRoute: typeof TestRoute
+  WelcomeRoute: typeof WelcomeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -162,6 +175,13 @@ declare module '@tanstack/react-router' {
       path: '/test'
       fullPath: '/test'
       preLoaderRoute: typeof TestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/welcome': {
+      id: '/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof WelcomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/': {
@@ -209,6 +229,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
   TestRoute: TestRoute,
+  WelcomeRoute: WelcomeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

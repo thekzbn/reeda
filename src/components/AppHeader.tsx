@@ -17,7 +17,7 @@ export function AppHeader({ email }: { email?: string | null | undefined }) {
     await queryClient.cancelQueries();
     queryClient.clear();
     await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
+    navigate({ to: "/welcome", replace: true });
   }
 
   return (
