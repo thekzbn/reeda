@@ -6,7 +6,7 @@ Reeda is being built around a question that most reading tools skip over: *what 
 
 The core idea is simple. When you read something that matters, you do not consume it passively and then go somewhere else to think. You pause, underline a phrase, and start forming a response while the source is still in front of you. Reading and thinking happen in the same moment. Reeda tries to preserve that by keeping the document and the reader's notes side by side in a single calm workspace, without forcing a switch between tools.
 
-Reeda is built by [Quing](https://github.com/thekzbn) and is in active early development.
+Reeda is built by [Quing](https://quing.thekzbn.name.ng) and is in active early development.
 
 ## What Reeda does today
 
