@@ -163,11 +163,17 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
       setSelection({ text, x: rect.left + rect.width / 2, y: rect.top });
     };
 
+    const handleScroll = () => {
+      setSelection(null);
+    };
+
     document.addEventListener("mouseup", handleSelection);
     document.addEventListener("touchend", handleSelection);
+    el.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
       document.removeEventListener("mouseup", handleSelection);
       document.removeEventListener("touchend", handleSelection);
+      el.removeEventListener("scroll", handleScroll);
     };
   }, [pdfDoc]);
 
