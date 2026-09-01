@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getDocumentNote, saveDocumentNote } from "@/lib/notes";
 import { NotesEditor, type NotesEditorHandle } from "./NotesEditor";
 import { Loader2 } from "lucide-react";
@@ -15,6 +15,8 @@ export const NotesPane = forwardRef<NotesEditorHandle, NotesPaneProps>(function 
   { documentId },
   ref,
 ) {
+  const queryClient = useQueryClient();
+
   const noteQuery = useQuery({
     queryKey: ["document-note", documentId],
     queryFn: () => getDocumentNote(documentId),
@@ -32,11 +34,12 @@ export const NotesPane = forwardRef<NotesEditorHandle, NotesPaneProps>(function 
     pendingRef.current = null;
     try {
       await saveDocumentNote(documentId, pending);
+      queryClient.setQueryData(["document-note", documentId], pending);
       setHasFailed(false);
     } catch {
       setHasFailed(true);
     }
-  }, [documentId]);
+  }, [documentId, queryClient]);
 
   const handleChange = useCallback(
     (markdown: string) => {
@@ -83,6 +86,11 @@ export const NotesPane = forwardRef<NotesEditorHandle, NotesPaneProps>(function 
   }
 
   return (
-    <NotesEditor ref={ref} initialMarkdown={noteQuery.data ?? ""} onChangeMarkdown={handleChange} />
+    <NotesEditor
+      ref={ref}
+      documentId={documentId}
+      initialMarkdown={noteQuery.data ?? ""}
+      onChangeMarkdown={handleChange}
+    />
   );
 });

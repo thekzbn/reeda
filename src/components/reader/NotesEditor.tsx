@@ -27,6 +27,7 @@ export interface NotesEditorHandle {
 }
 
 interface NotesEditorProps {
+  documentId: string;
   initialMarkdown: string;
   onChangeMarkdown: (markdown: string) => void;
 }
@@ -149,12 +150,13 @@ function Toolbar({ editor }: { editor: Editor }) {
 }
 
 export const NotesEditor = forwardRef<NotesEditorHandle, NotesEditorProps>(function NotesEditor(
-  { initialMarkdown, onChangeMarkdown },
+  { documentId, initialMarkdown, onChangeMarkdown },
   ref,
 ) {
   const onChangeRef = useRef(onChangeMarkdown);
   onChangeRef.current = onChangeMarkdown;
   const [, forceRender] = useState(0);
+  const lastLoadedDocIdRef = useRef<string | null>(null);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -183,13 +185,11 @@ export const NotesEditor = forwardRef<NotesEditorHandle, NotesEditorProps>(funct
 
   useEffect(() => {
     if (!editor) return;
-    const storage = editor.storage["markdown"] as { getMarkdown: () => string } | undefined;
-    const current = storage ? storage.getMarkdown() : editor.getText();
-    if (initialMarkdown !== current) {
+    if (lastLoadedDocIdRef.current !== documentId) {
+      lastLoadedDocIdRef.current = documentId;
       editor.commands.setContent(initialMarkdown, false);
     }
-    // Only reset when a different stored note arrives.
-  }, [editor, initialMarkdown]);
+  }, [editor, documentId, initialMarkdown]);
 
   useImperativeHandle(
     ref,

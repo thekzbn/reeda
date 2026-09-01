@@ -8,11 +8,12 @@ import { SearchBar } from "./SearchBar";
 import { NotesPane } from "./NotesPane";
 import type { NotesEditorHandle } from "./NotesEditor";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import type { ZoomMode } from "./types";
+import type { WorkspaceMode, ZoomMode } from "./types";
 import "./pdf-text-layer.css";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
+import { cn } from "@/lib/utils";
 
 interface PdfReaderProps {
   documentUrl: string;
@@ -32,10 +33,10 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isTocOpen, setIsTocOpen] = useState<boolean>(false);
-  const [isNotesOpen, setIsNotesOpen] = useState<boolean>(true);
   const [isDesktop, setIsDesktop] = useState<boolean>(true);
-  const [mobileView, setMobileView] = useState<"pdf" | "notes">("pdf");
+  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("split");
   const [selection, setSelection] = useState<{ text: string; x: number; y: number } | null>(null);
+  const [isDraggingDivider, setIsDraggingDivider] = useState<boolean>(false);
 
   const { pdfDoc, totalPages, outline, firstPageDimension, isLoading, error } =
     usePdfDocument(documentUrl);
@@ -125,11 +126,17 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
   // Track viewport size so small screens switch panes instead of splitting
   useEffect(() => {
     const query = window.matchMedia("(min-width: 1024px)");
-    const apply = () => setIsDesktop(query.matches);
+    const apply = () => {
+      const matches = query.matches;
+      setIsDesktop(matches);
+      if (!matches && workspaceMode === "split") {
+        setWorkspaceMode("pdf");
+      }
+    };
     apply();
     query.addEventListener("change", apply);
     return () => query.removeEventListener("change", apply);
-  }, []);
+  }, [workspaceMode]);
 
   // Track selected PDF text so it can be sent to the notes editor
   useEffect(() => {
@@ -267,25 +274,29 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
     );
   }
 
-  const notesVisible = isDesktop ? isNotesOpen : mobileView === "notes";
-  const pdfVisible = isDesktop || mobileView === "pdf";
+  const isPdfVisible = workspaceMode === "pdf" || (isDesktop && workspaceMode === "split");
+  const isNotesVisible = workspaceMode === "notes" || (isDesktop && workspaceMode === "split");
 
   const sendSelectionToNotes = () => {
     if (!selection) return;
-    if (!isDesktop) setMobileView("notes");
-    else setIsNotesOpen(true);
+    if (!isDesktop) {
+      setWorkspaceMode("notes");
+    } else if (workspaceMode === "pdf") {
+      setWorkspaceMode("split");
+    }
     const text = selection.text;
     setSelection(null);
     window.getSelection()?.removeAllRanges();
-    window.setTimeout(() => notesRef.current?.insertText(text), 0);
+    window.setTimeout(() => notesRef.current?.insertText(text), 50);
   };
 
   const pdfPane = (
     <main
       ref={scrollContainerRef}
-      className={`relative h-full overflow-y-auto overflow-x-auto bg-muted/40 p-4 sm:p-6 ${
-        pdfVisible ? "" : "hidden"
-      }`}
+      className={cn(
+        "relative h-full overflow-y-auto overflow-x-auto bg-muted/40 p-4 sm:p-6",
+        !isPdfVisible && "hidden",
+      )}
     >
       <div className="mx-auto flex flex-col items-center">
         {pagesArray.map((pageNum) => (
@@ -306,7 +317,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
   );
 
   const notesPane = (
-    <div className={`h-full min-h-0 ${notesVisible ? "" : "hidden"}`}>
+    <div className={cn("h-full min-h-0", !isNotesVisible && "hidden")}>
       <NotesPane ref={notesRef} documentId={documentId} />
     </div>
   );
@@ -314,7 +325,10 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
   return (
     <div
       ref={containerRef}
-      className="relative flex h-screen w-full flex-col overflow-hidden bg-muted/40 font-sans"
+      className={cn(
+        "relative flex h-screen w-full flex-col overflow-hidden bg-muted/40 font-sans",
+        isDraggingDivider && "select-none",
+      )}
     >
       <ReaderHeader
         title={title}
@@ -326,11 +340,9 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
         hasOutline={outline !== null && outline.length > 0}
         isTocOpen={isTocOpen}
         isSearchOpen={isSearchOpen}
-        isNotesOpen={notesVisible}
-        onToggleNotes={() => {
-          if (isDesktop) setIsNotesOpen((prev) => !prev);
-          else setMobileView((prev) => (prev === "notes" ? "pdf" : "notes"));
-        }}
+        workspaceMode={workspaceMode}
+        isDesktop={isDesktop}
+        onModeChange={(mode) => setWorkspaceMode(mode)}
         onPageChange={handleNavigateToPage}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
@@ -370,25 +382,33 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
       />
 
       <div className="relative min-h-0 flex-1">
-        {isDesktop && isNotesOpen ? (
-          <ResizablePanelGroup orientation="horizontal" id="reeda-reader-split">
-            <ResizablePanel defaultSize={58} minSize={30}>
+        {isDesktop && workspaceMode === "split" ? (
+          <ResizablePanelGroup
+            orientation="horizontal"
+            id="reeda-reader-split"
+            className="h-full"
+            onLayoutChanged={() => setIsDraggingDivider(false)}
+          >
+            <ResizablePanel defaultSize={58} minSize={30} maxSize={75}>
               {pdfPane}
             </ResizablePanel>
-            <ResizableHandle className="w-px bg-border transition-colors hover:bg-primary/40 data-[resize-handle-state=drag]:bg-primary/60" />
-            <ResizablePanel defaultSize={42} minSize={25}>
+            <ResizableHandle
+              onMouseDown={() => setIsDraggingDivider(true)}
+              onTouchStart={() => setIsDraggingDivider(true)}
+            />
+            <ResizablePanel defaultSize={42} minSize={25} maxSize={70}>
               {notesPane}
             </ResizablePanel>
           </ResizablePanelGroup>
         ) : (
-          <div className="h-full">
+          <div className="h-full w-full">
             {pdfPane}
             {notesPane}
           </div>
         )}
       </div>
 
-      {selection && pdfVisible ? (
+      {selection && isPdfVisible ? (
         <div
           className="fixed z-40 -translate-x-1/2 -translate-y-full pb-2"
           style={{ left: selection.x, top: selection.y }}

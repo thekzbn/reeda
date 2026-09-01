@@ -10,7 +10,6 @@ import {
   Minimize2,
   BookOpen,
   ArrowLeft,
-  PanelRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +19,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { ZoomMode } from "./types";
+import type { WorkspaceMode, ZoomMode } from "./types";
+import { cn } from "@/lib/utils";
 
 interface ReaderHeaderProps {
   title: string;
@@ -32,8 +32,9 @@ interface ReaderHeaderProps {
   hasOutline: boolean;
   isTocOpen: boolean;
   isSearchOpen: boolean;
-  isNotesOpen: boolean;
-  onToggleNotes: () => void;
+  workspaceMode: WorkspaceMode;
+  isDesktop: boolean;
+  onModeChange: (mode: WorkspaceMode) => void;
   onPageChange: (page: number) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
@@ -55,8 +56,9 @@ export function ReaderHeader({
   hasOutline,
   isTocOpen,
   isSearchOpen,
-  isNotesOpen,
-  onToggleNotes,
+  workspaceMode,
+  isDesktop,
+  onModeChange,
   onPageChange,
   onZoomIn,
   onZoomOut,
@@ -101,15 +103,15 @@ export function ReaderHeader({
         : `${zoomPercent}%`;
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 w-full items-center justify-between border-b border-border bg-background px-3 sm:px-6">
-      {/* Left: Back to library & Table of Contents */}
+    <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-border bg-background px-3 sm:px-5">
+      {/* Left: Back to library, Table of Contents, Document title */}
       <div className="flex min-w-0 items-center gap-2">
         <Link
           to="/"
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
           title="Back to library"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4 shrink-0" />
           <span className="hidden text-[15px] font-semibold tracking-tight text-foreground sm:inline">
             Reeda
           </span>
@@ -119,11 +121,12 @@ export function ReaderHeader({
           <Button
             variant="ghost"
             size="icon"
-            className={`squircle h-8 w-8 ${
+            className={cn(
+              "squircle h-8 w-8",
               isTocOpen
                 ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+                : "text-muted-foreground hover:text-foreground",
+            )}
             onClick={onToggleToc}
             title={isTocOpen ? "Hide contents" : "Show contents"}
             aria-label="Table of contents"
@@ -132,7 +135,7 @@ export function ReaderHeader({
           </Button>
         ) : null}
 
-        <span className="hidden max-w-[180px] truncate text-sm font-medium text-foreground/80 md:inline lg:max-w-[280px]">
+        <span className="hidden max-w-[140px] truncate text-sm font-medium text-foreground/85 md:inline lg:max-w-[240px]">
           {title}
         </span>
       </div>
@@ -178,8 +181,60 @@ export function ReaderHeader({
         </Button>
       </div>
 
-      {/* Right: Zoom, Search, Fullscreen */}
-      <div className="flex items-center gap-1">
+      {/* Right: Workspace mode switcher, Zoom, Search, Fullscreen */}
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* Workspace mode segmented control */}
+        <div
+          className="flex items-center rounded-md border border-border bg-muted/40 p-0.5 text-xs font-medium"
+          role="group"
+          aria-label="Workspace view"
+        >
+          <button
+            type="button"
+            onClick={() => onModeChange("pdf")}
+            className={cn(
+              "rounded px-2.5 py-1 transition-colors",
+              workspaceMode === "pdf"
+                ? "bg-background text-foreground font-semibold"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            title="PDF reading view"
+            aria-pressed={workspaceMode === "pdf"}
+          >
+            PDF
+          </button>
+          {isDesktop ? (
+            <button
+              type="button"
+              onClick={() => onModeChange("split")}
+              className={cn(
+                "rounded px-2.5 py-1 transition-colors",
+                workspaceMode === "split"
+                  ? "bg-background text-foreground font-semibold"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              title="Side-by-side workspace"
+              aria-pressed={workspaceMode === "split"}
+            >
+              Split
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => onModeChange("notes")}
+            className={cn(
+              "rounded px-2.5 py-1 transition-colors",
+              workspaceMode === "notes"
+                ? "bg-background text-foreground font-semibold"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            title="Notes writing view"
+            aria-pressed={workspaceMode === "notes"}
+          >
+            Notes
+          </button>
+        </div>
+
         {/* Zoom controls */}
         <div className="hidden items-center sm:flex">
           <Button
@@ -232,32 +287,17 @@ export function ReaderHeader({
         <Button
           variant="ghost"
           size="icon"
-          className={`squircle h-8 w-8 ${
+          className={cn(
+            "squircle h-8 w-8",
             isSearchOpen
               ? "bg-accent text-accent-foreground"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
+              : "text-muted-foreground hover:text-foreground",
+          )}
           onClick={onToggleSearch}
           title="Find in document (Ctrl+F)"
           aria-label="Find in document"
         >
           <Search className="h-4 w-4" />
-        </Button>
-
-        {/* Notes workspace */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className={`squircle h-8 w-8 ${
-            isNotesOpen
-              ? "bg-accent text-accent-foreground"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={onToggleNotes}
-          title={isNotesOpen ? "Hide notes" : "Show notes"}
-          aria-label="Notes"
-        >
-          <PanelRight className="h-4 w-4" />
         </Button>
 
         {/* Fullscreen */}

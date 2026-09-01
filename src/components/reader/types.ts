@@ -1,4 +1,5 @@
 export type ZoomMode = "fit-width" | "fit-page" | "custom";
+export type WorkspaceMode = "split" | "pdf" | "notes";
 
 export interface OutlineItem {
   title: string;
