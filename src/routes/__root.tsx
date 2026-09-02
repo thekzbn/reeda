@@ -8,6 +8,9 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { applyTheme, getStoredTheme, initThemeListener } from "@/lib/theme";
+import { getMyProfile } from "@/lib/profile";
+import { useQuery } from "@tanstack/react-query";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -117,6 +120,11 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("reeda_theme_preference")||"system";if(t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.classList.add("dark");}else{document.documentElement.classList.remove("dark");}}catch(e){}})()`,
+          }}
+        />
         <HeadContent />
       </head>
       <body>
@@ -125,6 +133,28 @@ function RootShell({ children }: { children: ReactNode }) {
       </body>
     </html>
   );
+}
+
+function ThemeSync() {
+  const profileQuery = useQuery({
+    queryKey: ["profile"],
+    queryFn: getMyProfile,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const profileTheme = profileQuery.data?.theme;
+
+  useEffect(() => {
+    if (profileTheme) {
+      applyTheme(profileTheme);
+    } else {
+      applyTheme(getStoredTheme());
+    }
+    const cleanup = initThemeListener(() => profileTheme ?? getStoredTheme());
+    return cleanup;
+  }, [profileTheme]);
+
+  return null;
 }
 
 function RootComponent() {
@@ -142,6 +172,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <ThemeSync />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <Toaster position="bottom-right" />

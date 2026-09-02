@@ -45,6 +45,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { getMyProfile } from "@/lib/profile";
 import { cn } from "@/lib/utils";
 import { createDocumentAnnotations, deleteDocumentAnnotation, getDocumentAnnotations } from "@/lib/annotations";
 import type {
@@ -367,17 +369,85 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
     };
   }, [documentId]);
 
+  const profileQuery = useQuery({
+    queryKey: ["profile"],
+    queryFn: getMyProfile,
+  });
+  const resumeReading = profileQuery.data?.resume_reading ?? true;
+
+  const restoredDocRef = useRef<string | null>(null);
+  const savePositionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const saveReadingPosition = useCallback(
+    (page: number) => {
+      if (!resumeReading) return;
+      if (savePositionTimeoutRef.current) {
+        clearTimeout(savePositionTimeoutRef.current);
+      }
+      savePositionTimeoutRef.current = setTimeout(() => {
+        try {
+          localStorage.setItem(
+            `reeda_pos_${documentId}`,
+            JSON.stringify({ page, updatedAt: Date.now() }),
+          );
+        } catch {
+          // Ignore storage errors
+        }
+      }, 500);
+    },
+    [resumeReading, documentId],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (savePositionTimeoutRef.current) {
+        clearTimeout(savePositionTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Restore reading position when document loads
+  useEffect(() => {
+    if (!totalPages || totalPages <= 1 || !pdfDoc || !resumeReading) return;
+    if (restoredDocRef.current === documentId) return;
+
+    try {
+      const stored = localStorage.getItem(`reeda_pos_${documentId}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const targetPage = Number(parsed?.page);
+        if (targetPage > 1 && targetPage <= totalPages) {
+          restoredDocRef.current = documentId;
+          const timer = setTimeout(() => {
+            const targetEl = scrollContainerRef.current?.querySelector(
+              `[data-page-number="${targetPage}"]`,
+            );
+            if (targetEl) {
+              targetEl.scrollIntoView({ behavior: "auto", block: "start" });
+              setCurrentPage(targetPage);
+            }
+          }, 150);
+          return () => clearTimeout(timer);
+        }
+      }
+    } catch {
+      // Ignore storage errors
+    }
+    restoredDocRef.current = documentId;
+  }, [documentId, totalPages, pdfDoc, resumeReading]);
+
   const handleNavigateToPage = useCallback(
     (pageNumber: number) => {
       const clamped = Math.max(1, Math.min(pageNumber, totalPages || 1));
       setCurrentPage(clamped);
+      saveReadingPosition(clamped);
 
       const targetEl = scrollContainerRef.current?.querySelector(`[data-page-number="${clamped}"]`);
       if (targetEl) {
         targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     },
-    [totalPages],
+    [totalPages, saveReadingPosition],
   );
 
   const {
@@ -802,6 +872,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
                   annotations={annotations.filter((annotation) => annotation.pageNumber === pageNum)}
                   onPageVisible={(visiblePage) => {
                     setCurrentPage(visiblePage);
+                    saveReadingPosition(visiblePage);
                   }}
                 />
               ))}
@@ -981,7 +1052,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
 
   const notesPane = (
     <div className={cn("h-full min-h-0", !isNotesVisible && "hidden")}>
-      <NotesPane ref={notesRef} documentId={documentId} />
+      <NotesPane ref={notesRef} documentId={documentId} documentTitle={title} />
     </div>
   );
 

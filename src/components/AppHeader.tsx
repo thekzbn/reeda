@@ -34,6 +34,9 @@ export function AppHeader({ email }: { email?: string | null | undefined }) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuItem asChild>
+              <Link to="/settings">Settings</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
               <Link to="/privacy">Privacy</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>

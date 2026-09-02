@@ -37,7 +37,7 @@ function LandingPage() {
   if (!checked) return null;
 
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 pt-6 sm:px-10 sm:pt-8">
         <span className="text-[15px] font-semibold tracking-tight" style={{ color: "#6A5ACD" }}>
@@ -51,35 +51,37 @@ function LandingPage() {
         </Link>
       </nav>
 
-      {/* Hero */}
-      <header className="mx-auto mt-20 max-w-2xl px-6 text-center sm:mt-28 sm:px-10">
-        <h1 className="text-4xl font-semibold leading-[1.15] tracking-tight text-foreground sm:text-[3.5rem] sm:leading-[1.1]">
-          Read and think
-          <br />
-          in the same place.
-        </h1>
-        <div className="mt-8">
-          <Link
-            to="/auth"
-            className="squircle inline-flex h-11 items-center justify-center px-7 text-[15px] font-medium text-white transition-colors hover:opacity-90"
-            style={{ backgroundColor: "#6A5ACD" }}
-          >
-            Get started
-          </Link>
-        </div>
-      </header>
+      <main className="flex-1">
+        {/* Hero */}
+        <header className="mx-auto mt-20 max-w-2xl px-6 text-center sm:mt-28 sm:px-10">
+          <h1 className="text-4xl font-semibold leading-[1.15] tracking-tight text-foreground sm:text-[3.5rem] sm:leading-[1.1]">
+            Read and think
+            <br />
+            in the same place.
+          </h1>
+          <div className="mt-8">
+            <Link
+              to="/auth"
+              className="squircle inline-flex h-11 items-center justify-center px-7 text-[15px] font-medium text-white transition-colors hover:opacity-90"
+              style={{ backgroundColor: "#6A5ACD" }}
+            >
+              Get started
+            </Link>
+          </div>
+        </header>
 
-      {/* Product image */}
-      <div className="mx-auto mt-16 max-w-5xl px-6 sm:mt-20 sm:px-10">
-        <img
-          src="/product.png"
-          alt="Reeda workspace showing a PDF document on the left and a notes editor on the right"
-          className="w-full rounded-lg border border-border"
-        />
-      </div>
+        {/* Product image */}
+        <div className="mx-auto mt-16 max-w-5xl px-6 sm:mt-20 sm:px-10">
+          <img
+            src="/product.png"
+            alt="Reeda workspace showing a PDF document on the left and a notes editor on the right"
+            className="w-full rounded-lg border border-border"
+          />
+        </div>
+      </main>
 
       {/* Footer */}
-      <footer className="mx-auto mt-20 max-w-5xl px-6 pb-10 sm:mt-24 sm:px-10">
+      <footer className="mt-auto mx-auto w-full max-w-5xl px-6 pb-10 pt-16 sm:px-10">
         <div className="flex items-center justify-between border-t border-border pt-6 text-xs text-muted-foreground">
           <span style={{ color: "#6A5ACD" }} className="font-medium">
             reeda

@@ -17,8 +17,20 @@ import {
   ListChecks,
   Quote,
   Link as LinkIcon,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getMyProfile, updateMyProfile } from "@/lib/profile";
+import { toast } from "sonner";
 import "./notes-editor.css";
 
 export interface NotesEditorHandle {
@@ -28,6 +40,7 @@ export interface NotesEditorHandle {
 
 interface NotesEditorProps {
   documentId: string;
+  documentTitle?: string;
   initialMarkdown: string;
   onChangeMarkdown: (markdown: string) => void;
 }
@@ -61,7 +74,49 @@ function ToolbarButton({
   );
 }
 
-function Toolbar({ editor }: { editor: Editor }) {
+function Toolbar({
+  editor,
+  documentTitle,
+}: {
+  editor: Editor;
+  documentTitle?: string;
+}) {
+  const queryClient = useQueryClient();
+  const profileQuery = useQuery({
+    queryKey: ["profile"],
+    queryFn: getMyProfile,
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: updateMyProfile,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+
+  const includeSource = profileQuery.data?.export_include_source ?? true;
+
+  const handleToggleIncludeSource = (checked: boolean) => {
+    updateProfileMutation.mutate({ export_include_source: checked });
+  };
+
+  const handleExport = async () => {
+    try {
+      const storage = editor.storage["markdown"] as { getMarkdown: () => string } | undefined;
+      const markdown = storage ? storage.getMarkdown() : editor.getText();
+      const { exportNotesToPdf } = await import("@/lib/notes-pdf");
+      exportNotesToPdf({
+        markdown,
+        sourceTitle: documentTitle,
+        includeSource,
+        fileName: documentTitle ? `${documentTitle} Notes` : "Notes",
+      });
+      toast.success("Notes exported as PDF.");
+    } catch {
+      toast.error("Could not export notes.");
+    }
+  };
+
   const chain = () => editor.chain().focus();
 
   const setLink = () => {
@@ -145,12 +200,43 @@ function Toolbar({ editor }: { editor: Editor }) {
       <ToolbarButton label="Link" active={editor.isActive("link")} onClick={setLink}>
         <LinkIcon className="h-4 w-4" />
       </ToolbarButton>
+
+      <div className="ml-auto flex items-center">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="squircle h-8 px-2 text-xs font-medium text-muted-foreground hover:text-foreground gap-1.5"
+              title="Export notes"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Export</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={handleExport} className="cursor-pointer text-xs">
+              <Download className="h-3.5 w-3.5 mr-2" />
+              <span>Export as PDF</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuCheckboxItem
+              checked={includeSource}
+              onCheckedChange={handleToggleIncludeSource}
+              className="cursor-pointer text-xs"
+            >
+              <span>Include source line</span>
+            </DropdownMenuCheckboxItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   );
 }
 
 export const NotesEditor = forwardRef<NotesEditorHandle, NotesEditorProps>(function NotesEditor(
-  { documentId, initialMarkdown, onChangeMarkdown },
+  { documentId, documentTitle, initialMarkdown, onChangeMarkdown },
   ref,
 ) {
   const onChangeRef = useRef(onChangeMarkdown);
@@ -209,7 +295,7 @@ export const NotesEditor = forwardRef<NotesEditorHandle, NotesEditorProps>(funct
 
   return (
     <div className="notes-editor flex h-full min-h-0 flex-col bg-background">
-      <Toolbar editor={editor} />
+      <Toolbar editor={editor} documentTitle={documentTitle} />
       <div className="min-h-0 flex-1 overflow-y-auto" onClick={() => editor.commands.focus()}>
         <EditorContent editor={editor} className="mx-auto h-full max-w-2xl" />
       </div>

@@ -7,12 +7,13 @@ import { toast } from "sonner";
 
 interface NotesPaneProps {
   documentId: string;
+  documentTitle?: string;
 }
 
 const AUTOSAVE_DELAY_MS = 900;
 
 export const NotesPane = forwardRef<NotesEditorHandle, NotesPaneProps>(function NotesPane(
-  { documentId },
+  { documentId, documentTitle },
   ref,
 ) {
   const queryClient = useQueryClient();
@@ -89,6 +90,7 @@ export const NotesPane = forwardRef<NotesEditorHandle, NotesPaneProps>(function 
     <NotesEditor
       ref={ref}
       documentId={documentId}
+      documentTitle={documentTitle}
       initialMarkdown={noteQuery.data ?? ""}
       onChangeMarkdown={handleChange}
     />
