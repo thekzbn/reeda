@@ -583,9 +583,20 @@ export function Privacy() {
           <p className="mt-2">
             <a
               href="mailto:thekzbn@proton.me"
+              target="_blank" 
               className="text-foreground underline underline-offset-4"
             >
               thekzbn@proton.me
+            </a>
+            <span className="text-muted-foreground">
+              {" "}or through the contact methods available on the{" "}
+            </span>
+            <a
+              href="https://quing.thekzbn.name.ng"
+              target="_blank" 
+              className="text-foreground underline underline-offset-4"
+            >
+              Quing project website
             </a>
           </p>
 

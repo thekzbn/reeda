@@ -570,18 +570,32 @@ export function Terms() {
           <h2 className="text-base font-semibold text-foreground">
             25. Contact
           </h2>
+
           <p className="mt-2 text-muted-foreground">
             For questions about these Terms, Reeda, or legal matters relating
             to the service, contact the Reeda project at:
           </p>
+
           <p className="mt-2">
             <a
               href="mailto:thekzbn@proton.me"
+              target="_blank"
               className="text-foreground underline underline-offset-4"
             >
               thekzbn@proton.me
             </a>
+            <span className="text-muted-foreground">
+              {" "}or through the contact methods available on the{" "}
+            </span>
+            <a
+              href="https://quing.thekzbn.name.ng"
+              target="_blank"
+              className="text-foreground underline underline-offset-4"
+            >
+              Quing project website
+            </a>
           </p>
+
           <p className="mt-2 text-muted-foreground">
             Reeda is operated by Ayomide Deji-Adeyale as part of the Quing
             project.
