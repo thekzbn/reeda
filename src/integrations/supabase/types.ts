@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      document_annotations: {
+        Row: {
+          annotation_type: string
+          created_at: string
+          document_id: string
+          geometry: Json
+          id: string
+          page_number: number
+          selected_text: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          annotation_type: string
+          created_at?: string
+          document_id: string
+          geometry?: Json
+          id?: string
+          page_number: number
+          selected_text?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          annotation_type?: string
+          created_at?: string
+          document_id?: string
+          geometry?: Json
+          id?: string
+          page_number?: number
+          selected_text?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_annotations_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_notes: {
         Row: {
           content: string
@@ -93,39 +137,48 @@ export type Database = {
           created_at: string
           current_tools: string[]
           display_name: string | null
+          export_include_source: boolean
           field: string | null
           id: string
           onboarding_completed: boolean
           purpose: string | null
           reading_types: string[]
+          resume_reading: boolean
           role_type: string | null
           storage_quota_bytes: number
+          theme: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           current_tools?: string[]
           display_name?: string | null
+          export_include_source?: boolean
           field?: string | null
           id: string
           onboarding_completed?: boolean
           purpose?: string | null
           reading_types?: string[]
+          resume_reading?: boolean
           role_type?: string | null
           storage_quota_bytes?: number
+          theme?: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           current_tools?: string[]
           display_name?: string | null
+          export_include_source?: boolean
           field?: string | null
           id?: string
           onboarding_completed?: boolean
           purpose?: string | null
           reading_types?: string[]
+          resume_reading?: boolean
           role_type?: string | null
           storage_quota_bytes?: number
+          theme?: string
           updated_at?: string
         }
         Relationships: []
