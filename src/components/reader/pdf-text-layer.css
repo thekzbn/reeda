@@ -1,8 +1,14 @@
-/* PDF.js Text Layer Styling */
+/* PDF.js Text Layer Styling — scale vars must match pdfjs-dist TextLayer layout */
 .pdf-page-container {
+  --scale-factor: 1;
+  --user-unit: 1;
+  --total-scale-factor: calc(var(--scale-factor) * var(--user-unit));
+  --scale-round-x: 1px;
+  --scale-round-y: 1px;
   position: relative;
   background-color: #ffffff;
   box-sizing: content-box;
+  isolation: isolate;
 }
 
 .pdf-page-container canvas {
@@ -12,12 +18,12 @@
 }
 
 .pdf-page-container .textLayer {
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
   position: absolute;
   text-align: initial;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   overflow: hidden;
   opacity: 1;
   line-height: 1;
@@ -27,6 +33,34 @@
   z-index: 2;
   user-select: text;
   -webkit-user-select: text;
+}
+
+.pdf-page-container .textLayer .markedContent {
+  display: contents;
+}
+
+.pdf-page-container .textLayer > :not(.markedContent),
+.pdf-page-container .textLayer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  --scale-x: 1;
+  --rotate: 0deg;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+.pdf-page-container .textLayer .endOfContent {
+  display: block;
+  position: absolute;
+  inset: 100% 0 0;
+  z-index: 0;
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.pdf-page-container .textLayer.selecting .endOfContent {
+  top: 0;
 }
 
 .pdf-page-container .annotationLayer {
@@ -39,23 +73,27 @@
 .pdf-page-container .pdf-annotation {
   position: absolute;
   box-sizing: border-box;
-  pointer-events: auto;
+  pointer-events: none;
   transition: opacity 0.15s ease;
 }
 
 .pdf-page-container .pdf-annotation--highlight {
-  background: color-mix(in oklch, var(--primary) 35%, transparent);
+  background-color: rgba(250, 204, 21, 0.65);
   border-radius: 2px;
   mix-blend-mode: multiply;
 }
 
 :is(.dark) .pdf-page-container .pdf-annotation--highlight {
-  background: color-mix(in oklch, var(--primary) 45%, transparent);
+  background-color: rgba(250, 204, 21, 0.45);
   mix-blend-mode: screen;
 }
 
 .pdf-page-container .pdf-annotation--underline {
-  border-bottom: max(2px, 0.14em) solid var(--primary);
+  border-bottom: max(2px, 0.15em) solid #2563eb;
+}
+
+:is(.dark) .pdf-page-container .pdf-annotation--underline {
+  border-bottom: max(2px, 0.15em) solid #60a5fa;
 }
 
 .pdf-page-container .pdf-annotation--strikethrough::after {
@@ -63,9 +101,13 @@
   top: 50%;
   right: 0;
   left: 0;
-  height: max(2px, 0.12em);
-  background: var(--destructive);
+  height: max(2px, 0.14em);
+  background: #e11d48;
   content: "";
+}
+
+:is(.dark) .pdf-page-container .pdf-annotation--strikethrough::after {
+  background: #fb7185;
 }
 
 .pdf-page-container .textLayer span,
@@ -75,20 +117,27 @@
   white-space: pre;
   cursor: text;
   transform-origin: 0% 0%;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .pdf-page-container .textLayer ::selection {
-  background: color-mix(in oklch, var(--primary) 38%, transparent);
+  background: rgba(59, 130, 246, 0.35);
+  color: transparent;
+}
+
+:is(.dark) .pdf-page-container .textLayer ::selection {
+  background: rgba(96, 165, 250, 0.45);
   color: transparent;
 }
 
 .pdf-page-container .textLayer .search-highlight {
-  background-color: color-mix(in oklch, var(--primary) 25%, transparent);
+  background-color: rgba(245, 158, 11, 0.3);
   border-radius: 2px;
 }
 
 .pdf-page-container .textLayer .search-highlight-active {
-  background-color: color-mix(in oklch, var(--primary) 55%, transparent);
-  outline: 1.5px solid var(--primary);
+  background-color: rgba(245, 158, 11, 0.6);
+  outline: 1.5px solid #f59e0b;
   border-radius: 2px;
 }

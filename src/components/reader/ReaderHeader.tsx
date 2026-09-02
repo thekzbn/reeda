@@ -1,8 +1,5 @@
-import { useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import {
-  ChevronLeft,
-  ChevronRight,
   Minus,
   Plus,
   Search,
@@ -24,8 +21,6 @@ import { cn } from "@/lib/utils";
 
 interface ReaderHeaderProps {
   title: string;
-  currentPage: number;
-  totalPages: number;
   scale: number;
   zoomMode: ZoomMode;
   isFullscreen: boolean;
@@ -35,7 +30,6 @@ interface ReaderHeaderProps {
   workspaceMode: WorkspaceMode;
   isDesktop: boolean;
   onModeChange: (mode: WorkspaceMode) => void;
-  onPageChange: (page: number) => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onZoomSelect: (scale: number) => void;
@@ -48,8 +42,6 @@ interface ReaderHeaderProps {
 
 export function ReaderHeader({
   title,
-  currentPage,
-  totalPages,
   scale,
   zoomMode,
   isFullscreen,
@@ -59,7 +51,6 @@ export function ReaderHeader({
   workspaceMode,
   isDesktop,
   onModeChange,
-  onPageChange,
   onZoomIn,
   onZoomOut,
   onZoomSelect,
@@ -69,31 +60,6 @@ export function ReaderHeader({
   onToggleSearch,
   onToggleFullscreen,
 }: ReaderHeaderProps) {
-  const [pageInput, setPageInput] = useState<string>(String(currentPage));
-
-  useEffect(() => {
-    setPageInput(String(currentPage));
-  }, [currentPage]);
-
-  const handlePageSubmit = () => {
-    const parsed = parseInt(pageInput, 10);
-    if (!isNaN(parsed) && parsed >= 1 && parsed <= totalPages) {
-      onPageChange(parsed);
-    } else {
-      setPageInput(String(currentPage));
-    }
-  };
-
-  const handlePageKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handlePageSubmit();
-      (e.target as HTMLInputElement).blur();
-    } else if (e.key === "Escape") {
-      setPageInput(String(currentPage));
-      (e.target as HTMLInputElement).blur();
-    }
-  };
-
   const zoomPercent = Math.round(scale * 100);
   const zoomLabel =
     zoomMode === "fit-width"
@@ -135,50 +101,9 @@ export function ReaderHeader({
           </Button>
         ) : null}
 
-        <span className="hidden max-w-[140px] truncate text-sm font-medium text-foreground/85 md:inline lg:max-w-[240px]">
+        <span className="hidden max-w-[180px] truncate text-sm font-medium text-foreground/85 md:inline lg:max-w-[320px]">
           {title}
         </span>
-      </div>
-
-      {/* Center: Page navigation */}
-      <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="squircle h-8 w-8 text-muted-foreground hover:text-foreground"
-          disabled={currentPage <= 1}
-          onClick={() => onPageChange(currentPage - 1)}
-          title="Previous page"
-          aria-label="Previous page"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-
-        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-          <input
-            type="text"
-            inputMode="numeric"
-            value={pageInput}
-            onChange={(e) => setPageInput(e.target.value)}
-            onBlur={handlePageSubmit}
-            onKeyDown={handlePageKeyDown}
-            className="squircle h-7 w-11 border border-border bg-background text-center text-xs font-medium text-foreground focus:border-primary focus:outline-none"
-            aria-label="Page number"
-          />
-          <span className="text-xs text-muted-foreground">/ {totalPages || 1}</span>
-        </div>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          className="squircle h-8 w-8 text-muted-foreground hover:text-foreground"
-          disabled={currentPage >= totalPages}
-          onClick={() => onPageChange(currentPage + 1)}
-          title="Next page"
-          aria-label="Next page"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
       </div>
 
       {/* Right: Workspace mode switcher, Zoom, Search, Fullscreen */}

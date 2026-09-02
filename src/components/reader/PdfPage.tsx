@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, memo } from "react";
+import { useEffect, useRef, useState, memo, type CSSProperties } from "react";
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist";
 import { pdfjsLib } from "./pdf-worker";
 import type { DocumentAnnotation, SearchMatch } from "./types";
@@ -125,10 +125,8 @@ export const PdfPage = memo(function PdfPage({
         await renderTask.promise;
         if (isCancelled) return;
 
-        // Render Text Layer
+        // Render Text Layer. Width/height are applied by PDF.js via --scale-factor.
         textLayerDiv.innerHTML = "";
-        textLayerDiv.style.width = `${Math.floor(viewport.width)}px`;
-        textLayerDiv.style.height = `${Math.floor(viewport.height)}px`;
 
         const textContent = await page.getTextContent();
         if (isCancelled) return;
@@ -142,6 +140,10 @@ export const PdfPage = memo(function PdfPage({
 
         await textLayer.render();
         if (isCancelled) return;
+
+        const endOfContent = document.createElement("div");
+        endOfContent.className = "endOfContent";
+        textLayerDiv.append(endOfContent);
 
         setIsRendered(true);
       } catch (err: unknown) {
@@ -164,6 +166,21 @@ export const PdfPage = memo(function PdfPage({
       if (textLayerInstance) textLayerInstance.cancel();
     };
   }, [isVisible, pdfDoc, pageNumber, scale]);
+
+  useEffect(() => {
+    const textLayerDiv = textLayerRef.current;
+    if (!textLayerDiv || !isRendered) return;
+
+    const onMouseDown = () => textLayerDiv.classList.add("selecting");
+    const onPointerUp = () => textLayerDiv.classList.remove("selecting");
+    textLayerDiv.addEventListener("mousedown", onMouseDown);
+    document.addEventListener("pointerup", onPointerUp);
+    return () => {
+      textLayerDiv.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("pointerup", onPointerUp);
+      textLayerDiv.classList.remove("selecting");
+    };
+  }, [isRendered]);
 
   // Apply search highlights on text layer spans
   useEffect(() => {
@@ -225,10 +242,13 @@ export const PdfPage = memo(function PdfPage({
       ref={containerRef}
       data-page-number={pageNumber}
       className="pdf-page-container mx-auto my-4 transition-transform duration-75"
-      style={{
-        width: `${currentWidth}px`,
-        height: `${currentHeight}px`,
-      }}
+      style={
+        {
+          width: `${currentWidth}px`,
+          height: `${currentHeight}px`,
+          "--scale-factor": String(scale),
+        } as CSSProperties
+      }
     >
       {isVisible ? (
         <>
