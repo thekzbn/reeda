@@ -1125,7 +1125,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
               className="h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium text-foreground/80 hover:bg-accent hover:text-foreground"
               title="Copy text"
               onMouseDown={(e) => e.preventDefault()}
-              onClick={copySelection}
+              onClick={() => void copySelection()}
             >
               {copied ? (
                 <>
@@ -1145,7 +1145,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
               className="squircle h-7 gap-1.5 rounded-full bg-primary px-3 text-xs font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
               title="Add selected text to notes"
               onMouseDown={(e) => e.preventDefault()}
-              onClick={sendSelectionToNotes}
+              onClick={() => sendSelectionToNotes()}
             >
               <BookOpen className="h-3.5 w-3.5" />
               <span>Add to notes</span>
