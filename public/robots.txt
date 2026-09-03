@@ -1,14 +1,12 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
-Allow: /
+Allow: /$
+Allow: /welcome
+Allow: /privacy
+Allow: /terms
+Disallow: /auth
+Disallow: /test
+Disallow: /settings
+Disallow: /onboarding
+Disallow: /documents/
+
+Sitemap: https://reeda.lovable.app/sitemap.xml

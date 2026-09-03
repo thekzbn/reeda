@@ -1,3 +1,21 @@
+/*
+ * Reeda - a reading environment for PDFs.
+ * Copyright (C) 2026 Quing (thekzbn)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { usePdfDocument } from "./use-pdf-document";
 import { usePdfSearch } from "./use-pdf-search";
@@ -408,8 +426,8 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
 
   // Restore reading position when document loads
   useEffect(() => {
-    if (!totalPages || totalPages <= 1 || !pdfDoc || !resumeReading) return;
-    if (restoredDocRef.current === documentId) return;
+    if (!totalPages || totalPages <= 1 || !pdfDoc || !resumeReading) return undefined;
+    if (restoredDocRef.current === documentId) return undefined;
 
     try {
       const stored = localStorage.getItem(`reeda_pos_${documentId}`);
@@ -434,6 +452,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
       // Ignore storage errors
     }
     restoredDocRef.current = documentId;
+    return undefined;
   }, [documentId, totalPages, pdfDoc, resumeReading]);
 
   const handleNavigateToPage = useCallback(
@@ -1047,6 +1066,42 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
           </div>
         </div>
       ) : null}
+
+      {/* PDF zoom and fit controls, anchored to the PDF pane */}
+      {isPdfVisible ? (
+        <div className="absolute bottom-5 left-4 z-20 flex items-center gap-0.5 rounded-md border border-border bg-background/95 px-0.5 py-0.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="squircle h-7 w-7 text-muted-foreground hover:text-foreground"
+            onClick={handleZoomOut}
+            title="Zoom out"
+            aria-label="Zoom out"
+          >
+            <Minus className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="squircle h-7 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+            onClick={handleFitWidth}
+            title="Fit width"
+            aria-pressed={zoomMode === "fit-width"}
+          >
+            {zoomMode === "fit-width" ? "Fit width" : `${Math.round(scale * 100)}%`}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="squircle h-7 w-7 text-muted-foreground hover:text-foreground"
+            onClick={handleZoomIn}
+            title="Zoom in"
+            aria-label="Zoom in"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 
@@ -1066,8 +1121,6 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
     >
       <ReaderHeader
         title={title}
-        scale={scale}
-        zoomMode={zoomMode}
         isFullscreen={isFullscreen}
         hasOutline={outline !== null && outline.length > 0}
         isTocOpen={isTocOpen}
@@ -1075,11 +1128,6 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
         workspaceMode={workspaceMode}
         isDesktop={isDesktop}
         onModeChange={(mode) => setWorkspaceMode(mode)}
-        onZoomIn={handleZoomIn}
-        onZoomOut={handleZoomOut}
-        onZoomSelect={handleZoomSelect}
-        onFitWidth={handleFitWidth}
-        onFitPage={handleFitPage}
         onToggleToc={() => setIsTocOpen((prev) => !prev)}
         onToggleSearch={() => {
           setIsSearchOpen((prev) => {

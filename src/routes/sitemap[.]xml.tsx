@@ -16,21 +16,28 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { reedaStorage } from "./reeda-storage";
-import type { StorageProvider, StorageProviderId } from "./types";
+import { createFileRoute } from "@tanstack/react-router";
 
-export * from "./types";
+const SITE = "https://reeda.lovable.app";
+const PAGES = ["/welcome", "/privacy", "/terms"];
 
-const providers: Partial<Record<StorageProviderId, StorageProvider>> = {
-  reeda: reedaStorage,
-};
-
-export const defaultStorageProviderId: StorageProviderId = "reeda";
-
-export function getStorageProvider(id: StorageProviderId = defaultStorageProviderId) {
-  const provider = providers[id];
-  if (!provider) {
-    throw new Error(`Storage provider "${id}" is not available.`);
-  }
-  return provider;
-}
+export const Route = createFileRoute("/sitemap.xml")({
+  server: {
+    handlers: {
+      GET: () => {
+        const today = new Date().toISOString().slice(0, 10);
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${PAGES.map(
+  (path) =>
+    `  <url>\n    <loc>${SITE}${path}</loc>\n    <lastmod>${today}</lastmod>\n  </url>`,
+).join("\n")}
+</urlset>
+`;
+        return new Response(xml, {
+          headers: { "Content-Type": "application/xml; charset=utf-8" },
+        });
+      },
+    },
+  },
+});
