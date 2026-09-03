@@ -50,6 +50,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({
     meta: [
+      { name: "robots", content: "noindex, nofollow" },
       { title: "Settings | Reeda" },
       { name: "description", content: "Manage your appearance, reading preferences, and account." },
       { property: "og:title", content: "Settings | Reeda" },

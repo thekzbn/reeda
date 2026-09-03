@@ -33,7 +33,10 @@ export const Route = createFileRoute("/privacy")({
         content:
           "How Reeda handles your account details, uploaded PDFs, notes, preferences, and other information used to provide the service.",
       },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://reeda.lovable.app/privacy" },
     ],
+    links: [{ rel: "canonical", href: "https://reeda.lovable.app/privacy" }],
   }),
   component: Privacy,
 });

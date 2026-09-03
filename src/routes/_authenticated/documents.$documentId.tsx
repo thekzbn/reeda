@@ -27,6 +27,7 @@ import { Loader2 } from "lucide-react";
 export const Route = createFileRoute("/_authenticated/documents/$documentId")({
   head: () => ({
     meta: [
+      { name: "robots", content: "noindex, nofollow" },
       { title: "Reader | Reeda" },
       { name: "description", content: "A quiet place to read and work with your PDFs." },
       { property: "og:title", content: "Reader | Reeda" },

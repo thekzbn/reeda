@@ -49,6 +49,7 @@ import {
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
+      { name: "robots", content: "noindex, nofollow" },
       { title: "Your library | Reeda" },
       { name: "description", content: "Every PDF you have added to Reeda, in one quiet place." },
       { property: "og:title", content: "Your library | Reeda" },

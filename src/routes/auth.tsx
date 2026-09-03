@@ -29,6 +29,7 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
+      { name: "robots", content: "noindex, nofollow" },
       { title: "Sign in to Reeda" },
       { name: "description", content: "Create your Reeda account to read and organise your PDFs." },
       { property: "og:title", content: "Sign in to Reeda" },

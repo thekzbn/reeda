@@ -15,7 +15,10 @@ export const Route = createFileRoute("/terms")({
         content:
           "The terms that govern your use of Reeda for reading PDFs, writing notes, and organizing your documents.",
       },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://reeda.lovable.app/terms" },
     ],
+    links: [{ rel: "canonical", href: "https://reeda.lovable.app/terms" }],
   }),
   component: Terms,
 });

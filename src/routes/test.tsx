@@ -23,6 +23,7 @@ export const Route = createFileRoute("/test")({
   ssr: false,
   head: () => ({
     meta: [
+      { name: "robots", content: "noindex, nofollow" },
       { title: "Test Environment | Reeda" },
       {
         name: "description",

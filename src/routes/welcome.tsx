@@ -23,15 +23,38 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/welcome")({
   head: () => ({
     meta: [
-      { title: "reeda" },
+      { title: "Reeda | Read PDFs and write notes in one place" },
       {
         name: "description",
-        content: "A reading environment where the source and your thinking live together.",
+        content:
+          "Reeda is a quiet reading workspace where your PDFs and your notes live side by side. Free and open source.",
       },
-      { property: "og:title", content: "reeda" },
+      { property: "og:title", content: "Reeda | Read PDFs and write notes in one place" },
       {
         property: "og:description",
-        content: "A reading environment where the source and your thinking live together.",
+        content:
+          "Reeda is a quiet reading workspace where your PDFs and your notes live side by side. Free and open source.",
+      },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://reeda.lovable.app/welcome" },
+      { property: "og:image", content: "https://reeda.lovable.app/product.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://reeda.lovable.app/product.png" },
+    ],
+    links: [{ rel: "canonical", href: "https://reeda.lovable.app/welcome" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "Reeda",
+          applicationCategory: "ProductivityApplication",
+          operatingSystem: "Web",
+          url: "https://reeda.lovable.app/welcome",
+          license: "https://www.gnu.org/licenses/agpl-3.0.html",
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+        }),
       },
     ],
   }),
@@ -111,6 +134,14 @@ function LandingPage() {
             <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
               Privacy
             </Link>
+            <a
+              href="https://github.com/thekzbn/reeda/tree/main?tab=License-1-ov-file"
+              target="_blank"
+              rel="noreferrer"
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              AGPL-3.0
+            </a>
           </div>
         </div>
       </footer>
