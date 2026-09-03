@@ -127,7 +127,7 @@ These are directions the project is actively considering, not commitments:
 
 Reeda is in early active development. The API, data model, and feature set may change. It is not yet intended for production use with important documents as the sole copy.
 
-A license has not yet been selected for the repository. Until one is added, standard copyright applies.
+Reeda is licensed under the [GNU Affero General Public License v3.0](https://github.com/thekzbn/reeda/tree/main?tab=License-1-ov-file).
 
 ## Links
 
