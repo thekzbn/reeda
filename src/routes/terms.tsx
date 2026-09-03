@@ -514,8 +514,16 @@ export function Terms() {
           </h2>
           <p className="mt-2 text-muted-foreground">
             Reeda is open-source software. The Reeda source code is currently
-            made available under the GNU Affero General Public License version
-            3 (AGPL-3.0).
+            made available under the{" "}
+            <a
+              href="https://github.com/thekzbn/reeda/tree/main?tab=License-1-ov-file"
+              target="_blank"
+              rel="noreferrer"
+              className="text-foreground underline underline-offset-4"
+            >
+              GNU Affero General Public License version 3 (AGPL-3.0)
+            </a>
+            .
           </p>
           <p className="mt-2 text-muted-foreground">
             The AGPL-3.0 license governs the rights granted in the applicable
