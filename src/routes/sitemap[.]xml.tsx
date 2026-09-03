@@ -21,7 +21,7 @@ import { createFileRoute } from "@tanstack/react-router";
 const SITE = "https://reeda.lovable.app";
 const PAGES = ["/welcome", "/privacy", "/terms"];
 
-export const Route = createFileRoute("/sitemap[.]xml")({
+export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: () => {
