@@ -1103,8 +1103,6 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
     >
       <ReaderHeader
         title={title}
-        scale={scale}
-        zoomMode={zoomMode}
         isFullscreen={isFullscreen}
         hasOutline={outline !== null && outline.length > 0}
         isTocOpen={isTocOpen}
@@ -1112,11 +1110,6 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
         workspaceMode={workspaceMode}
         isDesktop={isDesktop}
         onModeChange={(mode) => setWorkspaceMode(mode)}
-        onZoomIn={handleZoomIn}
-        onZoomOut={handleZoomOut}
-        onZoomSelect={handleZoomSelect}
-        onFitWidth={handleFitWidth}
-        onFitPage={handleFitPage}
         onToggleToc={() => setIsTocOpen((prev) => !prev)}
         onToggleSearch={() => {
           setIsSearchOpen((prev) => {

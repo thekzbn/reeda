@@ -1,7 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import {
-  Minus,
-  Plus,
   Search,
   Maximize2,
   Minimize2,
@@ -9,20 +7,11 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { WorkspaceMode, ZoomMode } from "./types";
+import type { WorkspaceMode } from "./types";
 import { cn } from "@/lib/utils";
 
 interface ReaderHeaderProps {
   title: string;
-  scale: number;
-  zoomMode: ZoomMode;
   isFullscreen: boolean;
   hasOutline: boolean;
   isTocOpen: boolean;
@@ -30,11 +19,6 @@ interface ReaderHeaderProps {
   workspaceMode: WorkspaceMode;
   isDesktop: boolean;
   onModeChange: (mode: WorkspaceMode) => void;
-  onZoomIn: () => void;
-  onZoomOut: () => void;
-  onZoomSelect: (scale: number) => void;
-  onFitWidth: () => void;
-  onFitPage: () => void;
   onToggleToc: () => void;
   onToggleSearch: () => void;
   onToggleFullscreen: () => void;
@@ -42,8 +26,6 @@ interface ReaderHeaderProps {
 
 export function ReaderHeader({
   title,
-  scale,
-  zoomMode,
   isFullscreen,
   hasOutline,
   isTocOpen,
@@ -51,23 +33,10 @@ export function ReaderHeader({
   workspaceMode,
   isDesktop,
   onModeChange,
-  onZoomIn,
-  onZoomOut,
-  onZoomSelect,
-  onFitWidth,
-  onFitPage,
   onToggleToc,
   onToggleSearch,
   onToggleFullscreen,
 }: ReaderHeaderProps) {
-  const zoomPercent = Math.round(scale * 100);
-  const zoomLabel =
-    zoomMode === "fit-width"
-      ? "Fit width"
-      : zoomMode === "fit-page"
-        ? "Fit page"
-        : `${zoomPercent}%`;
-
   return (
     <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-border bg-background px-3 sm:px-5">
       {/* Left: Back to library, Table of Contents, Document title */}
@@ -158,54 +127,6 @@ export function ReaderHeader({
           >
             Notes
           </button>
-        </div>
-
-        {/* Zoom controls */}
-        <div className="hidden items-center sm:flex">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="squircle h-8 w-8 text-muted-foreground hover:text-foreground"
-            onClick={onZoomOut}
-            title="Zoom out"
-            aria-label="Zoom out"
-          >
-            <Minus className="h-3.5 w-3.5" />
-          </Button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="squircle h-8 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-              >
-                {zoomLabel}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" className="w-36">
-              <DropdownMenuItem onSelect={onFitWidth}>Fit width</DropdownMenuItem>
-              <DropdownMenuItem onSelect={onFitPage}>Fit page</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => onZoomSelect(0.5)}>50%</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onZoomSelect(0.75)}>75%</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onZoomSelect(1.0)}>100%</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onZoomSelect(1.25)}>125%</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onZoomSelect(1.5)}>150%</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onZoomSelect(2.0)}>200%</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="squircle h-8 w-8 text-muted-foreground hover:text-foreground"
-            onClick={onZoomIn}
-            title="Zoom in"
-            aria-label="Zoom in"
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </Button>
         </div>
 
         {/* In-document text search */}
