@@ -1048,6 +1048,42 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
           </div>
         </div>
       ) : null}
+
+      {/* PDF zoom and fit controls, anchored to the PDF pane */}
+      {isPdfVisible ? (
+        <div className="absolute bottom-5 left-4 z-20 flex items-center gap-0.5 rounded-md border border-border bg-background/95 px-0.5 py-0.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="squircle h-7 w-7 text-muted-foreground hover:text-foreground"
+            onClick={handleZoomOut}
+            title="Zoom out"
+            aria-label="Zoom out"
+          >
+            <Minus className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="squircle h-7 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+            onClick={handleFitWidth}
+            title="Fit width"
+            aria-pressed={zoomMode === "fit-width"}
+          >
+            {zoomMode === "fit-width" ? "Fit width" : `${Math.round(scale * 100)}%`}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="squircle h-7 w-7 text-muted-foreground hover:text-foreground"
+            onClick={handleZoomIn}
+            title="Zoom in"
+            aria-label="Zoom in"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 
