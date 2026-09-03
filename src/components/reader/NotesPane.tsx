@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 interface NotesPaneProps {
   documentId: string;
-  documentTitle?: string;
+  documentTitle?: string | undefined;
 }
 
 const AUTOSAVE_DELAY_MS = 900;

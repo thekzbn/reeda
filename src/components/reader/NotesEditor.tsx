@@ -40,7 +40,7 @@ export interface NotesEditorHandle {
 
 interface NotesEditorProps {
   documentId: string;
-  documentTitle?: string;
+  documentTitle?: string | undefined;
   initialMarkdown: string;
   onChangeMarkdown: (markdown: string) => void;
 }
@@ -79,7 +79,7 @@ function Toolbar({
   documentTitle,
 }: {
   editor: Editor;
-  documentTitle?: string;
+  documentTitle?: string | undefined;
 }) {
   const queryClient = useQueryClient();
   const profileQuery = useQuery({

@@ -270,7 +270,7 @@ function renderTokens(layout: Layout, tokens: Token[], indent = 0) {
           }
           layout.writeRuns(runs, {
             indent: itemIndent,
-            firstLinePrefix: prefix || undefined,
+            ...(prefix ? { firstLinePrefix: prefix } : {}),
           });
           const nested = item.tokens.filter((t) => t.type === "list");
           if (nested.length > 0) renderTokens(layout, nested, itemIndent);

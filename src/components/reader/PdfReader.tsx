@@ -408,8 +408,8 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
 
   // Restore reading position when document loads
   useEffect(() => {
-    if (!totalPages || totalPages <= 1 || !pdfDoc || !resumeReading) return;
-    if (restoredDocRef.current === documentId) return;
+    if (!totalPages || totalPages <= 1 || !pdfDoc || !resumeReading) return undefined;
+    if (restoredDocRef.current === documentId) return undefined;
 
     try {
       const stored = localStorage.getItem(`reeda_pos_${documentId}`);
@@ -434,6 +434,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
       // Ignore storage errors
     }
     restoredDocRef.current = documentId;
+    return undefined;
   }, [documentId, totalPages, pdfDoc, resumeReading]);
 
   const handleNavigateToPage = useCallback(
