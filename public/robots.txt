@@ -9,4 +9,4 @@ Disallow: /settings
 Disallow: /onboarding
 Disallow: /documents/
 
-Sitemap: https://reeda.lovable.app/sitemap.xml
+Sitemap: https://reeda.quing.thekzbn.name.ng/sitemap.xml
