@@ -122,7 +122,9 @@ function Library() {
         if (uploadedCount > 0) {
           void queryClient.invalidateQueries({ queryKey: ["documents"] });
           toast.success(
-            uploadedCount === 1 ? "Added to your library." : `Added ${uploadedCount} documents to your library.`,
+            uploadedCount === 1
+              ? "Added to your library."
+              : `Added ${uploadedCount} documents to your library.`,
           );
         }
       } finally {
@@ -278,9 +280,7 @@ function Library() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground">
                   <FileUp className="h-6 w-6" />
                 </div>
-                <h3 className="mt-4 text-[15px] font-medium text-foreground">
-                  Add your first PDF
-                </h3>
+                <h3 className="mt-4 text-[15px] font-medium text-foreground">Add your first PDF</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Drag and drop your PDF file here, or click to browse
                 </p>
