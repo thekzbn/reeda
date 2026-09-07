@@ -16,10 +16,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { FileUp, Loader2, Upload } from "lucide-react";
 import {
   deleteDocument,
   formatBytes,
@@ -66,6 +67,9 @@ function Library() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fileInput = useRef<HTMLInputElement>(null);
+  const dragCounter = useRef(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [search, setSearch] = useState("");
   const [renaming, setRenaming] = useState<DocumentRecord | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -83,14 +87,98 @@ function Library() {
     queryFn: () => listDocuments(search),
   });
 
-  const upload = useMutation({
-    mutationFn: (file: File) => uploadDocument(file),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["documents"] });
-      toast.success("Added to your library.");
+  const handleFiles = useCallback(
+    async (files: FileList | File[] | null | undefined) => {
+      if (!files || files.length === 0) return;
+      const fileList = Array.from(files);
+      const pdfFiles = fileList.filter(
+        (file) => file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"),
+      );
+
+      const invalidCount = fileList.length - pdfFiles.length;
+      if (invalidCount > 0 && pdfFiles.length === 0) {
+        toast.error("Only PDF files can be added to your library.");
+        return;
+      }
+
+      if (invalidCount > 0) {
+        toast.warning(`Skipped ${invalidCount} non-PDF ${invalidCount === 1 ? "file" : "files"}.`);
+      }
+
+      setIsUploading(true);
+      try {
+        let uploadedCount = 0;
+        for (const file of pdfFiles) {
+          try {
+            await uploadDocument(file);
+            uploadedCount++;
+          } catch (error) {
+            toast.error(
+              error instanceof Error ? error.message : `Failed to upload "${file.name}".`,
+            );
+          }
+        }
+
+        if (uploadedCount > 0) {
+          void queryClient.invalidateQueries({ queryKey: ["documents"] });
+          toast.success(
+            uploadedCount === 1 ? "Added to your library." : `Added ${uploadedCount} documents to your library.`,
+          );
+        }
+      } finally {
+        setIsUploading(false);
+      }
     },
-    onError: (error: Error) => toast.error(error.message),
-  });
+    [queryClient],
+  );
+
+  useEffect(() => {
+    function handleDragEnter(e: DragEvent) {
+      if (e.dataTransfer?.types?.includes("Files")) {
+        dragCounter.current += 1;
+        setIsDragging(true);
+      }
+    }
+
+    function handleDragLeave(e: DragEvent) {
+      if (e.dataTransfer?.types?.includes("Files")) {
+        dragCounter.current -= 1;
+        if (dragCounter.current <= 0) {
+          dragCounter.current = 0;
+          setIsDragging(false);
+        }
+      }
+    }
+
+    function handleDragOver(e: DragEvent) {
+      if (e.dataTransfer?.types?.includes("Files")) {
+        e.preventDefault();
+      }
+    }
+
+    function handleDrop(e: DragEvent) {
+      if (e.dataTransfer?.types?.includes("Files")) {
+        e.preventDefault();
+        dragCounter.current = 0;
+        setIsDragging(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          void handleFiles(e.dataTransfer.files);
+        }
+      }
+    }
+
+    window.addEventListener("dragenter", handleDragEnter);
+    window.addEventListener("dragleave", handleDragLeave);
+    window.addEventListener("dragover", handleDragOver);
+    window.addEventListener("drop", handleDrop);
+
+    return () => {
+      window.removeEventListener("dragenter", handleDragEnter);
+      window.removeEventListener("dragleave", handleDragLeave);
+      window.removeEventListener("dragover", handleDragOver);
+      window.removeEventListener("drop", handleDrop);
+    };
+  }, [handleFiles]);
 
   const rename = useMutation({
     mutationFn: ({ id, title }: { id: string; title: string }) => renameDocument(id, title),
@@ -111,7 +199,19 @@ function Library() {
   const docs = documents.data ?? [];
 
   return (
-    <div className="min-h-screen">
+    <div className="relative min-h-screen">
+      {isDragging && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-6 backdrop-blur-xs">
+          <div className="squircle-lg flex h-64 w-full max-w-lg flex-col items-center justify-center border-2 border-dashed border-primary bg-accent/40 text-center animate-in fade-in zoom-in-95">
+            <Upload className="h-10 w-10 animate-bounce text-primary" />
+            <h3 className="mt-4 text-lg font-semibold text-foreground">
+              Drop PDF to add to your library
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">Release to upload</p>
+          </div>
+        </div>
+      )}
+
       <AppHeader email={profile.data?.display_name} />
 
       <main className="mx-auto max-w-3xl px-6 py-12">
@@ -119,20 +219,28 @@ function Library() {
           <h1 className="text-2xl font-semibold">Library</h1>
           <Button
             className="squircle h-10"
-            disabled={upload.isPending}
+            disabled={isUploading}
             onClick={() => fileInput.current?.click()}
           >
-            {upload.isPending ? "Adding" : "Add PDF"}
+            {isUploading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Adding
+              </>
+            ) : (
+              "Add PDF"
+            )}
           </Button>
           <input
             ref={fileInput}
             type="file"
             accept="application/pdf,.pdf"
+            multiple
             hidden
             onChange={(event) => {
-              const file = event.target.files?.[0];
+              const files = event.target.files;
               event.target.value = "";
-              if (file) upload.mutate(file);
+              if (files && files.length > 0) void handleFiles(files);
             }}
           />
         </div>
@@ -150,11 +258,35 @@ function Library() {
           {documents.isLoading ? (
             <p className="py-10 text-[15px] text-muted-foreground">Loading</p>
           ) : docs.length === 0 ? (
-            <p className="py-10 text-[15px] text-muted-foreground">
-              {search
-                ? "Nothing matches that search."
-                : "Nothing here yet. Add a PDF to get started."}
-            </p>
+            search ? (
+              <p className="py-10 text-[15px] text-muted-foreground">
+                Nothing matches that search.
+              </p>
+            ) : (
+              <div
+                onClick={() => fileInput.current?.click()}
+                className="squircle-lg mt-6 flex cursor-pointer flex-col items-center justify-center border-2 border-dashed border-border p-12 text-center transition-colors hover:border-primary/50 hover:bg-muted/30"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    fileInput.current?.click();
+                  }
+                }}
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-accent-foreground">
+                  <FileUp className="h-6 w-6" />
+                </div>
+                <h3 className="mt-4 text-[15px] font-medium text-foreground">
+                  Add your first PDF
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Drag and drop your PDF file here, or click to browse
+                </p>
+                <p className="mt-4 text-xs text-muted-foreground/80">PDF up to 500 MB</p>
+              </div>
+            )
           ) : (
             <ul>
               {docs.map((doc) => (
