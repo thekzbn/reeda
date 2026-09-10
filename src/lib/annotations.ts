@@ -58,18 +58,30 @@ function toAnnotation(row: AnnotationRow): DocumentAnnotation {
 const testStorageKey = (documentId: string) => `reeda-annotations:${documentId}`;
 const isTestDocument = (documentId: string) => documentId.startsWith("test-fixture-");
 
-export async function getDocumentAnnotations(documentId: string): Promise<DocumentAnnotation[]> {
-  let localAnnotations: DocumentAnnotation[] = [];
-  if (typeof window !== "undefined") {
+function readLocal(documentId: string): DocumentAnnotation[] {
+  if (typeof window === "undefined") return [];
+  try {
     const raw = window.localStorage.getItem(testStorageKey(documentId));
-    if (raw) {
-      try {
-        localAnnotations = JSON.parse(raw) as DocumentAnnotation[];
-      } catch {
-        localAnnotations = [];
-      }
-    }
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as DocumentAnnotation[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
   }
+}
+
+function writeLocal(documentId: string, list: DocumentAnnotation[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(testStorageKey(documentId), JSON.stringify(list));
+  } catch {
+    // Storage can be unavailable (private mode, sandboxed frames). Ignore.
+  }
+}
+
+export async function getDocumentAnnotations(documentId: string): Promise<DocumentAnnotation[]> {
+  const localAnnotations: DocumentAnnotation[] = readLocal(documentId);
+
 
   if (isTestDocument(documentId)) {
     return localAnnotations;
@@ -109,12 +121,8 @@ export async function createDocumentAnnotations(
       ...input,
       createdAt: new Date().toISOString(),
     }));
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(
-        testStorageKey(documentId),
-        JSON.stringify([...existing, ...created]),
-      );
-    }
+    writeLocal(documentId, [...existing, ...created]);
+
     return created;
   };
 
@@ -143,15 +151,11 @@ export async function createDocumentAnnotations(
       if (!error && data) {
         const saved = (data as unknown as AnnotationRow[]).map(toAnnotation);
         // Also keep local storage in sync
-        if (typeof window !== "undefined") {
-          const existing = await getDocumentAnnotations(documentId);
-          const dbIds = new Set(saved.map((s) => s.id));
-          const filtered = existing.filter((e) => !dbIds.has(e.id));
-          window.localStorage.setItem(
-            testStorageKey(documentId),
-            JSON.stringify([...filtered, ...saved]),
-          );
-        }
+        const existing = await getDocumentAnnotations(documentId);
+        const dbIds = new Set(saved.map((s) => s.id));
+        const filtered = existing.filter((e) => !dbIds.has(e.id));
+        writeLocal(documentId, [...filtered, ...saved]);
+
         return saved;
       }
     }
@@ -166,20 +170,11 @@ export async function deleteDocumentAnnotation(
   documentId: string,
   annotationId: string,
 ): Promise<void> {
-  if (typeof window !== "undefined") {
-    const raw = window.localStorage.getItem(testStorageKey(documentId));
-    if (raw) {
-      try {
-        const list = JSON.parse(raw) as DocumentAnnotation[];
-        window.localStorage.setItem(
-          testStorageKey(documentId),
-          JSON.stringify(list.filter((a) => a.id !== annotationId)),
-        );
-      } catch {
-        // ignore
-      }
-    }
-  }
+  writeLocal(
+    documentId,
+    readLocal(documentId).filter((a) => a.id !== annotationId),
+  );
+
 
   if (isTestDocument(documentId)) {
     return;

@@ -380,8 +380,9 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
         if (!cancelled) setAnnotations(loaded);
       })
       .catch(() => {
-        if (!cancelled) toast.error("We could not load annotations right now.");
+        if (!cancelled) setAnnotations([]);
       });
+
     return () => {
       cancelled = true;
     };
