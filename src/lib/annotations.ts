@@ -151,15 +151,11 @@ export async function createDocumentAnnotations(
       if (!error && data) {
         const saved = (data as unknown as AnnotationRow[]).map(toAnnotation);
         // Also keep local storage in sync
-        if (typeof window !== "undefined") {
-          const existing = await getDocumentAnnotations(documentId);
-          const dbIds = new Set(saved.map((s) => s.id));
-          const filtered = existing.filter((e) => !dbIds.has(e.id));
-          window.localStorage.setItem(
-            testStorageKey(documentId),
-            JSON.stringify([...filtered, ...saved]),
-          );
-        }
+        const existing = await getDocumentAnnotations(documentId);
+        const dbIds = new Set(saved.map((s) => s.id));
+        const filtered = existing.filter((e) => !dbIds.has(e.id));
+        writeLocal(documentId, [...filtered, ...saved]);
+
         return saved;
       }
     }
