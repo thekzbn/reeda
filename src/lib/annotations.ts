@@ -121,12 +121,8 @@ export async function createDocumentAnnotations(
       ...input,
       createdAt: new Date().toISOString(),
     }));
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(
-        testStorageKey(documentId),
-        JSON.stringify([...existing, ...created]),
-      );
-    }
+    writeLocal(documentId, [...existing, ...created]);
+
     return created;
   };
 
