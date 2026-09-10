@@ -58,18 +58,30 @@ function toAnnotation(row: AnnotationRow): DocumentAnnotation {
 const testStorageKey = (documentId: string) => `reeda-annotations:${documentId}`;
 const isTestDocument = (documentId: string) => documentId.startsWith("test-fixture-");
 
-export async function getDocumentAnnotations(documentId: string): Promise<DocumentAnnotation[]> {
-  let localAnnotations: DocumentAnnotation[] = [];
-  if (typeof window !== "undefined") {
+function readLocal(documentId: string): DocumentAnnotation[] {
+  if (typeof window === "undefined") return [];
+  try {
     const raw = window.localStorage.getItem(testStorageKey(documentId));
-    if (raw) {
-      try {
-        localAnnotations = JSON.parse(raw) as DocumentAnnotation[];
-      } catch {
-        localAnnotations = [];
-      }
-    }
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as DocumentAnnotation[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
   }
+}
+
+function writeLocal(documentId: string, list: DocumentAnnotation[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(testStorageKey(documentId), JSON.stringify(list));
+  } catch {
+    // Storage can be unavailable (private mode, sandboxed frames). Ignore.
+  }
+}
+
+export async function getDocumentAnnotations(documentId: string): Promise<DocumentAnnotation[]> {
+  const localAnnotations: DocumentAnnotation[] = readLocal(documentId);
+
 
   if (isTestDocument(documentId)) {
     return localAnnotations;
