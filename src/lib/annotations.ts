@@ -170,20 +170,11 @@ export async function deleteDocumentAnnotation(
   documentId: string,
   annotationId: string,
 ): Promise<void> {
-  if (typeof window !== "undefined") {
-    const raw = window.localStorage.getItem(testStorageKey(documentId));
-    if (raw) {
-      try {
-        const list = JSON.parse(raw) as DocumentAnnotation[];
-        window.localStorage.setItem(
-          testStorageKey(documentId),
-          JSON.stringify(list.filter((a) => a.id !== annotationId)),
-        );
-      } catch {
-        // ignore
-      }
-    }
-  }
+  writeLocal(
+    documentId,
+    readLocal(documentId).filter((a) => a.id !== annotationId),
+  );
+
 
   if (isTestDocument(documentId)) {
     return;
