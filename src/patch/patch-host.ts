@@ -191,7 +191,13 @@ class PluginHostStore {
 
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        this.plugins = JSON.parse(stored);
+        const parsed: ReedaPluginManifest[] = JSON.parse(stored);
+        const existingIds = new Set(parsed.map((p) => p.id));
+        const missingDefaults = DEFAULT_PLUGINS.filter((d) => !existingIds.has(d.id));
+        this.plugins = [...parsed, ...missingDefaults];
+        if (missingDefaults.length > 0) {
+          this.save();
+        }
       } else {
         this.plugins = DEFAULT_PLUGINS;
         this.save();
