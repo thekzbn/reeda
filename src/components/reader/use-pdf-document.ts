@@ -37,6 +37,7 @@ interface UsePdfDocumentResult {
   error: string | null;
   pageWordCounts: number[];
   detectedIsbn: string | null;
+  copyrightYear: string | null;
   extractedMetadata: ExtractedMetadata | null;
 }
 
@@ -49,6 +50,7 @@ export function usePdfDocument(url: string | null): UsePdfDocumentResult {
   const [error, setError] = useState<string | null>(null);
   const [pageWordCounts, setPageWordCounts] = useState<number[]>([]);
   const [detectedIsbn, setDetectedIsbn] = useState<string | null>(null);
+  const [copyrightYear, setCopyrightYear] = useState<string | null>(null);
   const [extractedMetadata, setExtractedMetadata] = useState<ExtractedMetadata | null>(null);
 
   useEffect(() => {
@@ -62,6 +64,7 @@ export function usePdfDocument(url: string | null): UsePdfDocumentResult {
     setError(null);
     setPageWordCounts([]);
     setDetectedIsbn(null);
+    setCopyrightYear(null);
     setExtractedMetadata(null);
 
     if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
@@ -113,14 +116,19 @@ export function usePdfDocument(url: string | null): UsePdfDocumentResult {
         };
         void extractWordCounts();
 
-        // Scan first 5 pages for ISBN numbers and fetch book metadata from Open Library / Google Books API
+        // Scan first 10 pages for ISBN numbers (e.g. ISBN 0-935008-14-4) and Copyright years (e.g. ©1973)
         const scanAndFetchIsbn = async () => {
           let foundIsbn: string | null = null;
-          const maxScan = Math.min(5, doc.numPages);
-          const isbnRegex = /\b(?:ISBN(?:-10|-13)?:?\s*)?(97[89][-\s]?\d{1,5}[-\s]?\d{1,7}[-\s]?\d{1,7}[-\s]?[\dX]|\d{1,5}[-\s]?\d{1,7}[-\s]?\d{1,7}[-\s]?[\dX])\b/gi;
+          let foundYear: string | null = null;
+          const maxScan = Math.min(10, doc.numPages);
+
+          // Regex patterns for explicit ISBNs and Copyright years
+          const isbnExplicitRegex = /(?:ISBN(?:-10|-13)?:?\s*)([0-9X\-\s]{10,17})/gi;
+          const isbnStandaloneRegex = /\b(97[89][-\s]?\d{1,5}[-\s]?\d{1,7}[-\s]?\d{1,7}[-\s]?[\dX]|\d{1,5}[-\s]?\d{1,7}[-\s]?\d{1,7}[-\s]?[\dX])\b/gi;
+          const copyrightRegex = /(?:©|\(C\)|Copyright(?:\s+©)?|copr\.|published)\s*(\d{4})/gi;
 
           for (let i = 1; i <= maxScan; i++) {
-            if (isCancelled || foundIsbn) break;
+            if (isCancelled) break;
             try {
               const page = await doc.getPage(i);
               const textContent = await page.getTextContent();
@@ -131,19 +139,52 @@ export function usePdfDocument(url: string | null): UsePdfDocumentResult {
                   .join(" ");
               }
 
-              const matches = fullText.match(isbnRegex);
-              if (matches && matches.length > 0) {
-                for (const m of matches) {
-                  const rawDigit = m.replace(/[^0-9X]/gi, "");
-                  if (rawDigit.length === 13 || rawDigit.length === 10) {
-                    foundIsbn = rawDigit;
+              // 1. Scan for Copyright Year (e.g. ©1973)
+              if (!foundYear) {
+                const yearMatches = [...fullText.matchAll(copyrightRegex)];
+                for (const match of yearMatches) {
+                  const yStr = match[1];
+                  if (yStr) {
+                    const y = parseInt(yStr, 10);
+                    if (y >= 1800 && y <= new Date().getFullYear()) {
+                      foundYear = yStr;
+                      break;
+                    }
+                  }
+                }
+              }
+
+              // 2. Scan for ISBN (preferring explicit 'ISBN 0-935008-14-4')
+              if (!foundIsbn) {
+                const explicitMatches = [...fullText.matchAll(isbnExplicitRegex)];
+                for (const match of explicitMatches) {
+                  const candidate = match[1]?.replace(/[^0-9X]/gi, "");
+                  if (candidate && (candidate.length === 10 || candidate.length === 13)) {
+                    foundIsbn = candidate;
                     break;
+                  }
+                }
+
+                if (!foundIsbn) {
+                  const standaloneMatches = fullText.match(isbnStandaloneRegex);
+                  if (standaloneMatches) {
+                    for (const m of standaloneMatches) {
+                      const candidate = m.replace(/[^0-9X]/gi, "");
+                      if (candidate.length === 10 || candidate.length === 13) {
+                        foundIsbn = candidate;
+                        break;
+                      }
+                    }
                   }
                 }
               }
             } catch {
               // Ignore page scan failure
             }
+          }
+
+          if (foundYear && !isCancelled) {
+            setCopyrightYear(foundYear);
           }
 
           if (foundIsbn && !isCancelled) {
@@ -226,6 +267,7 @@ export function usePdfDocument(url: string | null): UsePdfDocumentResult {
     error,
     pageWordCounts,
     detectedIsbn,
+    copyrightYear,
     extractedMetadata,
   };
 }

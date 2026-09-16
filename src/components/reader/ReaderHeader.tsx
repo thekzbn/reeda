@@ -39,6 +39,7 @@ interface ReaderHeaderProps {
   remainingWords?: number;
   isPdfVisible?: boolean;
   detectedIsbn?: string | null;
+  copyrightYear?: string | null;
   extractedMetadata?: { title?: string; author?: string; year?: string; publisher?: string } | null;
   isFullscreen: boolean;
   hasOutline: boolean;
@@ -61,6 +62,7 @@ export function ReaderHeader({
   remainingWords,
   isPdfVisible,
   detectedIsbn,
+  copyrightYear,
   extractedMetadata,
   isFullscreen,
   hasOutline,
@@ -122,6 +124,7 @@ export function ReaderHeader({
             remainingWords,
             isPdfVisible,
             detectedIsbn,
+            copyrightYear,
             extractedMetadata,
           }}
         />

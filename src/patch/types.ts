@@ -61,6 +61,7 @@ export interface PluginExecutionContext {
   remainingWords?: number;
   isPdfVisible?: boolean;
   detectedIsbn?: string | null;
+  copyrightYear?: string | null;
   extractedMetadata?: { title?: string; author?: string; year?: string; publisher?: string } | null;
   selectedText?: string;
   notesContent?: string;

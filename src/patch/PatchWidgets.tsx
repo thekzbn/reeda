@@ -122,7 +122,7 @@ export function CitationFormatterWidget({ context }: { context?: PluginExecution
 
   const finalTitle = apiMeta?.title?.trim() || oceanMeta.title;
   const finalAuthor = apiMeta?.author?.trim() || oceanMeta.author;
-  const finalYear = apiMeta?.year?.trim() || String(currentYear);
+  const finalYear = apiMeta?.year?.trim() || context?.copyrightYear || String(currentYear);
   const finalPublisher = apiMeta?.publisher?.trim() || '';
 
   const handleInsert = (format: 'apa' | 'bibtex' | 'chicago' | 'mla') => {

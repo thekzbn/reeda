@@ -379,6 +379,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
     error,
     pageWordCounts,
     detectedIsbn,
+    copyrightYear,
     extractedMetadata,
   } = usePdfDocument(documentUrl);
   const [remainingWords, setRemainingWords] = useState<number | undefined>(undefined);
@@ -1212,6 +1213,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
         remainingWords={remainingWords}
         isPdfVisible={isPdfVisible}
         detectedIsbn={detectedIsbn}
+        copyrightYear={copyrightYear}
         extractedMetadata={extractedMetadata}
         isFullscreen={isFullscreen}
         hasOutline={outline !== null && outline.length > 0}
