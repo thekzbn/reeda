@@ -35,9 +35,18 @@ import { Input } from "@/components/ui/input";
 import { AppHeader } from "@/components/AppHeader";
 import { PatchSlot } from "@/patch/PatchSlot";
 import {
+  pluginHost,
+  getDocumentPriorityTag,
+  setDocumentPriorityTag,
+} from "@/patch/patch-host";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -74,6 +83,19 @@ function Library() {
   const [search, setSearch] = useState("");
   const [renaming, setRenaming] = useState<DocumentRecord | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
+  const [priorityPluginEnabled, setPriorityPluginEnabled] = useState(() =>
+    pluginHost.isPluginEnabled("plugin-library-tags")
+  );
+  const [, setTagVersion] = useState(0);
+
+  useEffect(() => {
+    const unsub = pluginHost.subscribe(() => {
+      setPriorityPluginEnabled(pluginHost.isPluginEnabled("plugin-library-tags"));
+      setTagVersion((v) => v + 1);
+    });
+    return unsub;
+  }, []);
 
   const profile = useQuery({ queryKey: ["profile"], queryFn: getMyProfile });
 
@@ -87,6 +109,12 @@ function Library() {
     queryKey: ["documents", search],
     queryFn: () => listDocuments(search),
   });
+
+  const rawDocs = documents.data ?? [];
+  const docs =
+    activeTagFilter && priorityPluginEnabled
+      ? rawDocs.filter((doc) => getDocumentPriorityTag(doc.id) === activeTagFilter)
+      : rawDocs;
 
   const handleFiles = useCallback(
     async (files: FileList | File[] | null | undefined) => {
@@ -199,17 +227,6 @@ function Library() {
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
-
-  const rawDocs = documents.data ?? [];
-  const docs = rawDocs.filter((doc) => {
-    if (!activeTagFilter) return true;
-    if (activeTagFilter === "To Read") return !doc.last_opened_at;
-    if (activeTagFilter === "In Progress") return !!doc.last_opened_at;
-    if (activeTagFilter === "Synthesized") return doc.title.toLowerCase().includes("notes") || !!doc.last_opened_at;
-    return true;
-  });
-
   return (
     <div className="relative min-h-screen">
       {isDragging && (
@@ -306,49 +323,120 @@ function Library() {
             )
           ) : (
             <ul>
-              {docs.map((doc) => (
-                <li
-                  key={doc.id}
-                  className="flex items-center justify-between gap-4 border-b border-border py-4"
-                >
-                  <Link
-                    to="/documents/$documentId"
-                    params={{ documentId: doc.id }}
-                    className="min-w-0 flex-1"
+              {docs.map((doc) => {
+                const docTag = priorityPluginEnabled ? getDocumentPriorityTag(doc.id) : null;
+
+                return (
+                  <li
+                    key={doc.id}
+                    className="flex items-center justify-between gap-4 border-b border-border py-4"
                   >
-                    <span className="block truncate text-[15px] font-medium hover:text-primary">
-                      {doc.title}
-                    </span>
-                    <span className="mt-0.5 block text-sm text-muted-foreground">
-                      {formatBytes(Number(doc.file_size))} ·{" "}
-                      {new Date(doc.created_at).toLocaleDateString()}
-                    </span>
-                  </Link>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="squircle text-muted-foreground">
-                        More
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem
-                        onSelect={() => {
-                          setRenaming(doc);
-                          setRenameValue(doc.title);
-                        }}
-                      >
-                        Rename
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive"
-                        onSelect={() => remove.mutate(doc)}
-                      >
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </li>
-              ))}
+                    <Link
+                      to="/documents/$documentId"
+                      params={{ documentId: doc.id }}
+                      className="min-w-0 flex-1"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-[15px] font-medium hover:text-primary">
+                          {doc.title}
+                        </span>
+                        {docTag && (
+                          <span className="rounded-md bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary-foreground shrink-0">
+                            {docTag}
+                          </span>
+                        )}
+                      </div>
+                      <span className="mt-0.5 block text-sm text-muted-foreground">
+                        {formatBytes(Number(doc.file_size))} ·{" "}
+                        {new Date(doc.created_at).toLocaleDateString()}
+                      </span>
+                    </Link>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="squircle text-muted-foreground">
+                          More
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-44">
+                        <DropdownMenuItem
+                          onSelect={() => {
+                            setRenaming(doc);
+                            setRenameValue(doc.title);
+                          }}
+                        >
+                          Rename
+                        </DropdownMenuItem>
+
+                        {priorityPluginEnabled && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger className="cursor-pointer text-xs">
+                                Set Priority
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuSubContent className="w-36">
+                                <DropdownMenuItem
+                                  className="cursor-pointer text-xs"
+                                  onClick={() => {
+                                    setDocumentPriorityTag(doc.id, "To Read");
+                                    setTagVersion((v) => v + 1);
+                                    toast.success(`Set priority for "${doc.title}" to To Read`);
+                                  }}
+                                >
+                                  To Read
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="cursor-pointer text-xs"
+                                  onClick={() => {
+                                    setDocumentPriorityTag(doc.id, "In Progress");
+                                    setTagVersion((v) => v + 1);
+                                    toast.success(`Set priority for "${doc.title}" to In Progress`);
+                                  }}
+                                >
+                                  In Progress
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="cursor-pointer text-xs"
+                                  onClick={() => {
+                                    setDocumentPriorityTag(doc.id, "Synthesized");
+                                    setTagVersion((v) => v + 1);
+                                    toast.success(`Set priority for "${doc.title}" to Synthesized`);
+                                  }}
+                                >
+                                  Synthesized
+                                </DropdownMenuItem>
+                                {docTag && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      className="cursor-pointer text-xs text-muted-foreground"
+                                      onClick={() => {
+                                        setDocumentPriorityTag(doc.id, null);
+                                        setTagVersion((v) => v + 1);
+                                        toast.success(`Cleared priority tag for "${doc.title}"`);
+                                      }}
+                                    >
+                                      Clear Priority
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                          </>
+                        )}
+
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive cursor-pointer"
+                          onSelect={() => remove.mutate(doc)}
+                        >
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

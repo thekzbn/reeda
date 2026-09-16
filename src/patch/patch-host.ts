@@ -130,8 +130,12 @@ const DEFAULT_PLUGINS: ReedaPluginManifest[] = [
   },
 ];
 
+const SYSTEM_ENABLED_KEY = 'reeda_plugins_system_enabled_v1';
+const DOC_TAGS_KEY = 'reeda_document_priority_tags_v1';
+
 class PluginHostStore {
   private plugins: ReedaPluginManifest[] = [];
+  private systemEnabled: boolean = true;
   private listeners: Set<() => void> = new Set();
 
   constructor() {
@@ -144,6 +148,9 @@ class PluginHostStore {
       return;
     }
     try {
+      const storedEnabled = localStorage.getItem(SYSTEM_ENABLED_KEY);
+      this.systemEnabled = storedEnabled !== 'false';
+
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         this.plugins = JSON.parse(stored);
@@ -160,11 +167,21 @@ class PluginHostStore {
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.plugins));
+        localStorage.setItem(SYSTEM_ENABLED_KEY, String(this.systemEnabled));
       } catch {
         // storage quota
       }
     }
     this.notify();
+  }
+
+  public isSystemEnabled(): boolean {
+    return this.systemEnabled;
+  }
+
+  public setSystemEnabled(enabled: boolean): void {
+    this.systemEnabled = enabled;
+    this.save();
   }
 
   public subscribe(listener: () => void): () => void {
@@ -183,12 +200,19 @@ class PluginHostStore {
   }
 
   public getBySlot(slotId: ReedaSlotId): ReedaPluginManifest[] {
+    if (!this.systemEnabled) return [];
     return this.plugins.filter(
       p =>
         p.enabled &&
         p.resource_locks.slot_id === slotId &&
         (p.status === 'active_verified' || p.status === 'active_unverified_user')
     );
+  }
+
+  public isPluginEnabled(pluginId: string): boolean {
+    if (!this.systemEnabled) return false;
+    const p = this.getById(pluginId);
+    return !!p?.enabled;
   }
 
   public getById(pluginId: string): ReedaPluginManifest | undefined {
@@ -231,6 +255,32 @@ class PluginHostStore {
     this.save();
     return true;
   }
+}
+
+export function getDocumentPriorityTag(docId: string): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const data = localStorage.getItem(DOC_TAGS_KEY);
+    if (!data) return null;
+    const parsed = JSON.parse(data);
+    return parsed[docId] || null;
+  } catch {
+    return null;
+  }
+}
+
+export function setDocumentPriorityTag(docId: string, tag: string | null): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const data = localStorage.getItem(DOC_TAGS_KEY);
+    const parsed = data ? JSON.parse(data) : {};
+    if (tag) {
+      parsed[docId] = tag;
+    } else {
+      delete parsed[docId];
+    }
+    localStorage.setItem(DOC_TAGS_KEY, JSON.stringify(parsed));
+  } catch {}
 }
 
 export const pluginHost = new PluginHostStore();

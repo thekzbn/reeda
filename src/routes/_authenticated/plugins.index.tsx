@@ -74,9 +74,11 @@ function PluginsIndexPage() {
             </p>
           </div>
 
+          {/* 
           <Button asChild size="sm" variant="outline" className="mt-7 text-xs font-medium">
             <Link to="/plugins/new">Add plugin</Link>
           </Button>
+          */}
         </div>
 
         <div className="divide-y divide-border border-y border-border">

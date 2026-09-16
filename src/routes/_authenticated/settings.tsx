@@ -28,6 +28,7 @@ import {
   setRemovePageSpacing,
   type ThemeMode,
 } from "@/lib/profile";
+import { pluginHost } from "@/patch/patch-host";
 import { listDocuments, formatBytes, MANAGED_STORAGE_ALLOWANCE_BYTES } from "@/lib/documents";
 import { applyTheme } from "@/lib/theme";
 import { AppHeader } from "@/components/AppHeader";
@@ -113,8 +114,18 @@ function SettingsPage() {
     updateMutation.mutate({ theme: newTheme });
   };
 
+  const [pluginsSystemEnabled, setPluginsSystemEnabled] = useState(() =>
+    pluginHost.isSystemEnabled()
+  );
+
   const handleResumeReadingChange = (checked: boolean) => {
     updateMutation.mutate({ resume_reading: checked });
+  };
+
+  const handlePluginsSystemToggle = (checked: boolean) => {
+    setPluginsSystemEnabled(checked);
+    pluginHost.setSystemEnabled(checked);
+    toast.success(`Plugins ${checked ? "enabled" : "disabled"}.`);
   };
 
   const handleRemovePageSpacingChange = (checked: boolean) => {
@@ -282,6 +293,21 @@ function SettingsPage() {
               onCheckedChange={handleRemovePageSpacingChange}
               disabled={updateMutation.isPending}
               aria-label="Remove space between pages"
+            />
+          </div>
+
+          {/* Enable Plugins */}
+          <div className="flex items-center justify-between gap-4 py-6">
+            <div>
+              <h2 className="text-sm font-medium text-foreground">Enable plugins</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Allow plugins and extensions to enhance your reading, note-taking, and library features.
+              </p>
+            </div>
+            <Switch
+              checked={pluginsSystemEnabled}
+              onCheckedChange={handlePluginsSystemToggle}
+              aria-label="Enable plugins"
             />
           </div>
 
