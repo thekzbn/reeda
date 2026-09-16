@@ -240,7 +240,7 @@ export function PublishAndReportWidget({ context }: { context?: PluginExecutionC
     let templateText = '';
     switch (type) {
       case 'cornell':
-        templateText = `\n\n# Cornell Notes: ${docTitle}\n*Date: ${todayStr} | Source: ${docTitle}*\n\n## Cues / Keywords\n- Key Concept 1\n- Key Question\n\n## Notes\n- Detailed note point...\n- Supporting evidence or quote...\n\n## Summary\n> Synthesize main takeaways in 2-3 sentences here.\n\n`;
+        templateText = `\n\n# Cornell Notes: ${docTitle}\n*Date: ${todayStr} | Source: ${docTitle}*\n\n| Cues & Keywords | Main Notes & Outlines |\n| :--- | :--- |\n| **Key Question 1**<br>What is the primary thesis? | • Main argument point<br>• Supporting quote or evidence<br>• Analysis |\n| **Key Concept / Term**<br>Core definition | • Detailed breakdown<br>• Explanatory note |\n| **Key Question 2**<br>What are the implications? | • Impact & conclusions<br>• Next steps |\n\n---\n\n### Summary\n> **Synthesize Main Takeaways:**  \n> Write 2–3 sentences synthesizing the key conclusions connecting the cues on the left with the main notes on the right.\n\n`;
         break;
       case 'exec':
         templateText = `\n\n# Executive Summary\n**Document:** ${docTitle}  \n**Date:** ${todayStr}  \n\n## Core Thesis\nInsert the primary argument or goal of this reading.\n\n## Key Findings\n1. First major insight...\n2. Second major insight...\n3. Third major insight...\n\n## Action Items\n- [ ] Follow up on reference...\n- [ ] Synthesize findings into report...\n\n`;

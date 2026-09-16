@@ -135,6 +135,33 @@ export function exportNotesToHtml(options: NotesExportOptions): void {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 0.875em;
     }
+    .content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      font-size: 0.9rem;
+    }
+    .content th {
+      background-color: var(--accent);
+      color: var(--fg);
+      font-weight: 600;
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 2px solid var(--border);
+      border-right: 1px solid var(--border);
+    }
+    .content th:last-child { border-right: none; }
+    .content td {
+      padding: 12px 14px;
+      vertical-align: top;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+    }
+    .content td:last-child { border-right: none; }
+    .content tr:last-child td { border-bottom: none; }
     .content ul, .content ol { padding-left: 1.5rem; }
     .content li { margin-bottom: 0.35rem; }
     @media print {

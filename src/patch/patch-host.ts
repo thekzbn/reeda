@@ -10,7 +10,7 @@ import type {
   PluginLifecycleStatus,
 } from './types';
 
-const STORAGE_KEY = 'reeda_plugin_directory_v2';
+const STORAGE_KEY = 'reeda_plugin_directory_v3';
 const ENABLED_STATE_KEY = 'reeda_plugin_enabled_states_v2';
 
 const DEFAULT_PLUGINS: ReedaPluginManifest[] = [
@@ -59,7 +59,7 @@ const DEFAULT_PLUGINS: ReedaPluginManifest[] = [
     category: 'notes',
     author: 'Reeda Lab',
     version: '1.1.0',
-    enabled: true,
+    enabled: false,
     canonical_hash: 'b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1',
     status: 'active_verified',
     target_service: 'reeda_notes',
@@ -97,7 +97,7 @@ const DEFAULT_PLUGINS: ReedaPluginManifest[] = [
     category: 'library',
     author: 'Reeda Lab',
     version: '1.0.0',
-    enabled: true,
+    enabled: false,
     canonical_hash: 'c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2',
     status: 'active_verified',
     target_service: 'reeda_library',
@@ -135,7 +135,7 @@ const DEFAULT_PLUGINS: ReedaPluginManifest[] = [
     category: 'notes',
     author: 'Reeda Lab',
     version: '1.0.0',
-    enabled: true,
+    enabled: false,
     canonical_hash: 'd4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3',
     status: 'active_verified',
     target_service: 'reeda_notes',

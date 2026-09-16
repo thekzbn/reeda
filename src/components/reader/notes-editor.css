@@ -133,3 +133,42 @@
   pointer-events: none;
   color: var(--muted-foreground);
 }
+
+.notes-editor .ProseMirror table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25em 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 0.9em;
+}
+
+.notes-editor .ProseMirror th {
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-weight: 600;
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+.notes-editor .ProseMirror th:last-child {
+  border-right: none;
+}
+
+.notes-editor .ProseMirror td {
+  padding: 10px 12px;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+.notes-editor .ProseMirror td:last-child {
+  border-right: none;
+}
+
+.notes-editor .ProseMirror tr:last-child td {
+  border-bottom: none;
+}
