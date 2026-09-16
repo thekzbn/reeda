@@ -58,6 +58,71 @@ export type Database = {
           },
         ]
       }
+      document_citations: {
+        Row: {
+          accessed_date: string | null
+          authors: Json
+          citation_key: string
+          created_at: string
+          document_id: string
+          doi_or_url: string
+          id: string
+          issue: string
+          pages: string
+          publication_year: number | null
+          publisher_or_journal: string
+          source_type: string
+          title: string
+          updated_at: string
+          user_id: string
+          volume: string
+        }
+        Insert: {
+          accessed_date?: string | null
+          authors?: Json
+          citation_key?: string
+          created_at?: string
+          document_id: string
+          doi_or_url?: string
+          id?: string
+          issue?: string
+          pages?: string
+          publication_year?: number | null
+          publisher_or_journal?: string
+          source_type?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+          volume?: string
+        }
+        Update: {
+          accessed_date?: string | null
+          authors?: Json
+          citation_key?: string
+          created_at?: string
+          document_id?: string
+          doi_or_url?: string
+          id?: string
+          issue?: string
+          pages?: string
+          publication_year?: number | null
+          publisher_or_journal?: string
+          source_type?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          volume?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_citations_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: true
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_notes: {
         Row: {
           content: string
@@ -132,8 +197,47 @@ export type Database = {
         }
         Relationships: []
       }
+      note_references: {
+        Row: {
+          citation_key: string
+          created_at: string
+          document_id: string
+          id: string
+          reference_data: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          citation_key?: string
+          created_at?: string
+          document_id: string
+          id?: string
+          reference_data?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          citation_key?: string
+          created_at?: string
+          document_id?: string
+          id?: string
+          reference_data?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_references_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
+          citation_style: string
           created_at: string
           current_tools: string[]
           display_name: string | null
@@ -150,6 +254,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          citation_style?: string
           created_at?: string
           current_tools?: string[]
           display_name?: string | null
@@ -166,6 +271,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          citation_style?: string
           created_at?: string
           current_tools?: string[]
           display_name?: string | null
