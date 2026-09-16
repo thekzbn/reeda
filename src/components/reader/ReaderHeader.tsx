@@ -35,6 +35,8 @@ interface ReaderHeaderProps {
   documentId?: string;
   currentPage?: number;
   totalPages?: number;
+  pageWordCounts?: number[];
+  remainingWords?: number;
   isFullscreen: boolean;
   hasOutline: boolean;
   isTocOpen: boolean;
@@ -52,6 +54,8 @@ export function ReaderHeader({
   documentId,
   currentPage,
   totalPages,
+  pageWordCounts,
+  remainingWords,
   isFullscreen,
   hasOutline,
   isTocOpen,
@@ -108,6 +112,8 @@ export function ReaderHeader({
             documentTitle: title,
             currentPage,
             totalPages,
+            pageWordCounts,
+            remainingWords,
           }}
         />
       </div>

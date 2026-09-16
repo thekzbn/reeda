@@ -370,8 +370,9 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
     }
   };
 
-  const { pdfDoc, totalPages, outline, firstPageDimension, isLoading, error } =
+  const { pdfDoc, totalPages, outline, firstPageDimension, isLoading, error, pageWordCounts } =
     usePdfDocument(documentUrl);
+  const [remainingWords, setRemainingWords] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
@@ -656,6 +657,83 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
     };
   }, [pdfDoc]);
 
+  // Central Viewport Focal-Point Tracker (35% focal line) & Word Density Estimator
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el || !pdfDoc) return;
+
+    let ticking = false;
+
+    const updatePositionAndWords = () => {
+      ticking = false;
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      const pageElements = Array.from(
+        container.querySelectorAll<HTMLElement>(".pdf-page-container[data-page-number]")
+      );
+      if (pageElements.length === 0) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const focalY = containerRect.top + containerRect.height * 0.35;
+
+      let activePage = 1;
+      let intraPageFraction = 0;
+
+      for (const pageEl of pageElements) {
+        const pageNum = Number(pageEl.dataset["pageNumber"]);
+        if (!Number.isInteger(pageNum)) continue;
+
+        const rect = pageEl.getBoundingClientRect();
+        if (rect.top <= focalY && rect.bottom >= focalY) {
+          activePage = pageNum;
+          if (rect.height > 0) {
+            intraPageFraction = Math.max(0, Math.min(1, (focalY - rect.top) / rect.height));
+          }
+          break;
+        } else if (rect.top > focalY) {
+          break;
+        } else {
+          activePage = pageNum;
+          intraPageFraction = 1;
+        }
+      }
+
+      setCurrentPage((prev) => {
+        if (prev !== activePage) {
+          saveReadingPosition(activePage);
+          return activePage;
+        }
+        return prev;
+      });
+
+      if (pageWordCounts && pageWordCounts.length > 0) {
+        let wordsLeft = 0;
+        const activePageWords = pageWordCounts[activePage - 1] ?? 0;
+        wordsLeft += activePageWords * (1 - intraPageFraction);
+
+        for (let p = activePage + 1; p <= totalPages; p++) {
+          wordsLeft += pageWordCounts[p - 1] ?? 0;
+        }
+        setRemainingWords(Math.round(wordsLeft));
+      }
+    };
+
+    const handleScrollAndPosition = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(updatePositionAndWords);
+      }
+    };
+
+    el.addEventListener("scroll", handleScrollAndPosition, { passive: true });
+    updatePositionAndWords();
+
+    return () => {
+      el.removeEventListener("scroll", handleScrollAndPosition);
+    };
+  }, [pdfDoc, totalPages, pageWordCounts, saveReadingPosition]);
+
   // Keyboard navigation & search shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -890,10 +968,6 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
                   searchQuery={searchQuery}
                   activeMatch={activeMatch}
                   annotations={annotations.filter((annotation) => annotation.pageNumber === pageNum)}
-                  onPageVisible={(visiblePage) => {
-                    setCurrentPage(visiblePage);
-                    saveReadingPosition(visiblePage);
-                  }}
                 />
               ))}
             </div>
@@ -1125,6 +1199,8 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
         documentId={documentId}
         currentPage={currentPage}
         totalPages={totalPages}
+        pageWordCounts={pageWordCounts}
+        remainingWords={remainingWords}
         isFullscreen={isFullscreen}
         hasOutline={outline !== null && outline.length > 0}
         isTocOpen={isTocOpen}

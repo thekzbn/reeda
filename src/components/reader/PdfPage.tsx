@@ -81,7 +81,6 @@ export const PdfPage = memo(function PdfPage({
         for (const entry of entries) {
           if (entry.isIntersecting) {
             setIsVisible(true);
-            onPageVisible?.(pageNumber);
           } else {
             // Keep rendered in memory if close, or un-render if scrolled far away
             // For smoother scrolling, we unmount canvas rendering only when outside the rootMargin
@@ -98,7 +97,7 @@ export const PdfPage = memo(function PdfPage({
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [pageNumber, onPageVisible]);
+  }, []);
 
   // Render canvas & text layer when visible
   useEffect(() => {

@@ -28,6 +28,7 @@ interface UsePdfDocumentResult {
   firstPageDimension: PageDimension | null;
   isLoading: boolean;
   error: string | null;
+  pageWordCounts: number[];
 }
 
 export function usePdfDocument(url: string | null): UsePdfDocumentResult {
@@ -37,6 +38,7 @@ export function usePdfDocument(url: string | null): UsePdfDocumentResult {
   const [firstPageDimension, setFirstPageDimension] = useState<PageDimension | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [pageWordCounts, setPageWordCounts] = useState<number[]>([]);
 
   useEffect(() => {
     if (!url) {
@@ -47,6 +49,7 @@ export function usePdfDocument(url: string | null): UsePdfDocumentResult {
     let isCancelled = false;
     setIsLoading(true);
     setError(null);
+    setPageWordCounts([]);
 
     if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
       pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_SRC;
@@ -68,6 +71,32 @@ export function usePdfDocument(url: string | null): UsePdfDocumentResult {
 
         setPdfDoc(doc);
         setTotalPages(doc.numPages);
+
+        // Extract word counts asynchronously in background
+        const countArray: number[] = new Array(doc.numPages).fill(0);
+        const extractWordCounts = async () => {
+          for (let i = 1; i <= doc.numPages; i++) {
+            if (isCancelled) return;
+            try {
+              const page = await doc.getPage(i);
+              const textContent = await page.getTextContent();
+              let count = 0;
+              for (const item of textContent.items) {
+                if ("str" in item && typeof item.str === "string") {
+                  const words = item.str.trim().split(/\s+/).filter(Boolean);
+                  count += words.length;
+                }
+              }
+              countArray[i - 1] = count;
+            } catch {
+              countArray[i - 1] = 0;
+            }
+          }
+          if (!isCancelled) {
+            setPageWordCounts([...countArray]);
+          }
+        };
+        void extractWordCounts();
 
         // Fetch initial page dimension from page 1
         try {
@@ -133,6 +162,7 @@ export function usePdfDocument(url: string | null): UsePdfDocumentResult {
     firstPageDimension,
     isLoading,
     error,
+    pageWordCounts,
   };
 }
 

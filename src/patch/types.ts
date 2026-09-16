@@ -57,6 +57,8 @@ export interface PluginExecutionContext {
   documentTitle?: string;
   currentPage?: number;
   totalPages?: number;
+  pageWordCounts?: number[];
+  remainingWords?: number;
   selectedText?: string;
   notesContent?: string;
   activeTagFilter?: string | null;

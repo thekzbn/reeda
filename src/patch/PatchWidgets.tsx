@@ -22,19 +22,29 @@ export function ReadingTimeCalculatorWidget({ context }: { context?: PluginExecu
   const totalPages = context?.totalPages ?? 1;
   const currentPage = context?.currentPage ?? 1;
   const remainingPages = Math.max(0, totalPages - currentPage);
-  
-  // Standard 250 words per minute; average PDF technical page ~300 words
-  const wordsPerPage = 300;
-  const totalMinutesRemaining = Math.max(1, Math.ceil((remainingPages * wordsPerPage) / 250));
+  const remainingWords = context?.remainingWords;
+  const pageWordCounts = context?.pageWordCounts;
 
   if (totalPages <= 1) return null;
+
+  let totalMinutesRemaining: number;
+  if (typeof remainingWords === 'number' && remainingWords >= 0) {
+    totalMinutesRemaining = remainingWords === 0 ? 0 : Math.max(1, Math.ceil(remainingWords / 250));
+  } else if (pageWordCounts && pageWordCounts.length > 0) {
+    const wordsLeft = pageWordCounts.slice(currentPage - 1).reduce((a, b) => a + b, 0);
+    totalMinutesRemaining = wordsLeft === 0 ? 0 : Math.max(1, Math.ceil(wordsLeft / 250));
+  } else {
+    // Fallback: standard 250 words/min based on 300 words per page
+    const wordsPerPage = 300;
+    totalMinutesRemaining = remainingPages === 0 ? 0 : Math.max(1, Math.ceil((remainingPages * wordsPerPage) / 250));
+  }
 
   return (
     <span
       className="hidden text-xs text-muted-foreground/80 lg:inline select-none"
-      title={`Estimated reading time for remaining ${remainingPages} pages`}
+      title={`Estimated reading time based on word density (${remainingPages} pages remaining)`}
     >
-      {remainingPages === 0 ? 'Completed' : `~${totalMinutesRemaining} min left`}
+      {remainingPages === 0 || totalMinutesRemaining === 0 ? 'Completed' : `~${totalMinutesRemaining} min left`}
     </span>
   );
 }
