@@ -20,6 +20,9 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedDocumentsDocumentIdRouteImport } from './routes/_authenticated/documents.$documentId'
+import { Route as AuthenticatedPluginsIndexRouteImport } from './routes/_authenticated/plugins.index'
+import { Route as AuthenticatedPluginsPluginIdRouteImport } from './routes/_authenticated/plugins.$pluginId'
+import { Route as AuthenticatedPluginsNewRouteImport } from './routes/_authenticated/plugins.new'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -76,6 +79,23 @@ const AuthenticatedDocumentsDocumentIdRoute =
     path: '/documents/$documentId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPluginsIndexRoute =
+  AuthenticatedPluginsIndexRouteImport.update({
+    id: '/plugins/',
+    path: '/plugins/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPluginsPluginIdRoute =
+  AuthenticatedPluginsPluginIdRouteImport.update({
+    id: '/plugins/$pluginId',
+    path: '/plugins/$pluginId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPluginsNewRoute = AuthenticatedPluginsNewRouteImport.update({
+  id: '/plugins/new',
+  path: '/plugins/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -88,6 +108,9 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/documents/$documentId': typeof AuthenticatedDocumentsDocumentIdRoute
+  '/plugins/$pluginId': typeof AuthenticatedPluginsPluginIdRoute
+  '/plugins/new': typeof AuthenticatedPluginsNewRoute
+  '/plugins/': typeof AuthenticatedPluginsIndexRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -100,6 +123,9 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/': typeof AuthenticatedIndexRoute
   '/documents/$documentId': typeof AuthenticatedDocumentsDocumentIdRoute
+  '/plugins/$pluginId': typeof AuthenticatedPluginsPluginIdRoute
+  '/plugins/new': typeof AuthenticatedPluginsNewRoute
+  '/plugins': typeof AuthenticatedPluginsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -114,6 +140,9 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/documents/$documentId': typeof AuthenticatedDocumentsDocumentIdRoute
+  '/_authenticated/plugins/$pluginId': typeof AuthenticatedPluginsPluginIdRoute
+  '/_authenticated/plugins/new': typeof AuthenticatedPluginsNewRoute
+  '/_authenticated/plugins/': typeof AuthenticatedPluginsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -128,6 +157,9 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/settings'
     | '/documents/$documentId'
+    | '/plugins/$pluginId'
+    | '/plugins/new'
+    | '/plugins/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -140,6 +172,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/'
     | '/documents/$documentId'
+    | '/plugins/$pluginId'
+    | '/plugins/new'
+    | '/plugins'
   id:
     | '__root__'
     | '/_authenticated'
@@ -153,6 +188,9 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/'
     | '/_authenticated/documents/$documentId'
+    | '/_authenticated/plugins/$pluginId'
+    | '/_authenticated/plugins/new'
+    | '/_authenticated/plugins/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -244,6 +282,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDocumentsDocumentIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/plugins/': {
+      id: '/_authenticated/plugins/'
+      path: '/plugins'
+      fullPath: '/plugins/'
+      preLoaderRoute: typeof AuthenticatedPluginsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/plugins/$pluginId': {
+      id: '/_authenticated/plugins/$pluginId'
+      path: '/plugins/$pluginId'
+      fullPath: '/plugins/$pluginId'
+      preLoaderRoute: typeof AuthenticatedPluginsPluginIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/plugins/new': {
+      id: '/_authenticated/plugins/new'
+      path: '/plugins/new'
+      fullPath: '/plugins/new'
+      preLoaderRoute: typeof AuthenticatedPluginsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -252,6 +311,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedDocumentsDocumentIdRoute: typeof AuthenticatedDocumentsDocumentIdRoute
+  AuthenticatedPluginsPluginIdRoute: typeof AuthenticatedPluginsPluginIdRoute
+  AuthenticatedPluginsNewRoute: typeof AuthenticatedPluginsNewRoute
+  AuthenticatedPluginsIndexRoute: typeof AuthenticatedPluginsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -259,6 +321,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedDocumentsDocumentIdRoute: AuthenticatedDocumentsDocumentIdRoute,
+  AuthenticatedPluginsPluginIdRoute: AuthenticatedPluginsPluginIdRoute,
+  AuthenticatedPluginsNewRoute: AuthenticatedPluginsNewRoute,
+  AuthenticatedPluginsIndexRoute: AuthenticatedPluginsIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

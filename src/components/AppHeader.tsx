@@ -16,7 +16,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,12 +27,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { PluginDirectoryDialog } from "@/patch/PluginDirectoryDialog";
 
 export function AppHeader({ email }: { email?: string | null | undefined }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [pluginsOpen, setPluginsOpen] = useState(false);
 
   async function signOut() {
     await queryClient.cancelQueries();
@@ -56,8 +53,8 @@ export function AppHeader({ email }: { email?: string | null | undefined }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onClick={() => setPluginsOpen(true)} className="cursor-pointer">
-                Plugins
+              <DropdownMenuItem asChild>
+                <Link to="/plugins">Plugins</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
@@ -74,8 +71,6 @@ export function AppHeader({ email }: { email?: string | null | undefined }) {
           </DropdownMenu>
         </div>
       </div>
-
-      <PluginDirectoryDialog open={pluginsOpen} onOpenChange={setPluginsOpen} />
     </header>
   );
 }
