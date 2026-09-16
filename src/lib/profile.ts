@@ -20,6 +20,26 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type ThemeMode = "light" | "dark" | "system";
 
+const REMOVE_PAGE_SPACING_KEY = "reeda_remove_page_spacing";
+
+export function getRemovePageSpacing(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(REMOVE_PAGE_SPACING_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+export function setRemovePageSpacing(enabled: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(REMOVE_PAGE_SPACING_KEY, String(enabled));
+  } catch {
+    // Ignore storage quota
+  }
+}
+
 export interface Profile {
   id: string;
   display_name: string | null;
@@ -33,6 +53,7 @@ export interface Profile {
   theme: ThemeMode;
   resume_reading: boolean;
   export_include_source: boolean;
+  remove_page_spacing?: boolean;
 }
 
 export async function getMyProfile(): Promise<Profile | null> {

@@ -19,6 +19,7 @@
 import { useEffect, useRef, useState, memo, type CSSProperties } from "react";
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist";
 import { pdfjsLib } from "./pdf-worker";
+import { cn } from "@/lib/utils";
 import type { DocumentAnnotation, SearchMatch } from "./types";
 import { AnnotationOverlay } from "./AnnotationOverlay";
 
@@ -29,6 +30,7 @@ interface PdfPageProps {
   searchQuery: string;
   activeMatch: SearchMatch | null;
   annotations: DocumentAnnotation[];
+  removePageSpacing?: boolean;
   onPageVisible?: (pageNumber: number) => void;
 }
 
@@ -39,6 +41,7 @@ export const PdfPage = memo(function PdfPage({
   searchQuery,
   activeMatch,
   annotations,
+  removePageSpacing = false,
   onPageVisible,
 }: PdfPageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -258,7 +261,10 @@ export const PdfPage = memo(function PdfPage({
     <div
       ref={containerRef}
       data-page-number={pageNumber}
-      className="pdf-page-container mx-auto my-4 transition-transform duration-75"
+      className={cn(
+        "pdf-page-container mx-auto transition-transform duration-75",
+        removePageSpacing ? "my-0 border-b border-border/40" : "my-4"
+      )}
       style={
         {
           width: `${currentWidth}px`,

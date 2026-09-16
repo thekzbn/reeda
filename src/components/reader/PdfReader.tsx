@@ -64,7 +64,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { getMyProfile } from "@/lib/profile";
+import { getMyProfile, getRemovePageSpacing } from "@/lib/profile";
 import { cn } from "@/lib/utils";
 import { createDocumentAnnotations, deleteDocumentAnnotation, getDocumentAnnotations } from "@/lib/annotations";
 import type {
@@ -948,6 +948,8 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
 
   const activeMenuSelection = menuSnapshot || selection || selectionRef.current;
 
+  const removePageSpacing = profileQuery.data?.remove_page_spacing ?? getRemovePageSpacing();
+
   const pdfPane = (
     <div className={cn("relative h-full w-full overflow-hidden", !isPdfVisible && "hidden")}>
       <ContextMenu
@@ -966,7 +968,10 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
         <ContextMenuTrigger asChild>
           <main
             ref={scrollContainerRef}
-            className="relative h-full overflow-y-auto overflow-x-auto bg-muted/40 p-4 sm:p-6"
+            className={cn(
+              "relative h-full overflow-y-auto overflow-x-auto bg-muted/40",
+              removePageSpacing ? "p-0 sm:py-2" : "p-4 sm:p-6"
+            )}
           >
             <div className="mx-auto flex flex-col items-center">
               {pagesArray.map((pageNum) => (
@@ -978,6 +983,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
                   searchQuery={searchQuery}
                   activeMatch={activeMatch}
                   annotations={annotations.filter((annotation) => annotation.pageNumber === pageNum)}
+                  removePageSpacing={removePageSpacing}
                 />
               ))}
             </div>

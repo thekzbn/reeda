@@ -24,6 +24,8 @@ import {
   getMyProfile,
   updateMyProfile,
   deleteMyAccount,
+  getRemovePageSpacing,
+  setRemovePageSpacing,
   type ThemeMode,
 } from "@/lib/profile";
 import { listDocuments, formatBytes, MANAGED_STORAGE_ALLOWANCE_BYTES } from "@/lib/documents";
@@ -115,6 +117,11 @@ function SettingsPage() {
     updateMutation.mutate({ resume_reading: checked });
   };
 
+  const handleRemovePageSpacingChange = (checked: boolean) => {
+    setRemovePageSpacing(checked);
+    updateMutation.mutate({ remove_page_spacing: checked });
+  };
+
   const handleExportSourceChange = (checked: boolean) => {
     updateMutation.mutate({ export_include_source: checked });
   };
@@ -158,6 +165,7 @@ function SettingsPage() {
 
   const currentTheme = profile?.theme ?? "system";
   const resumeReading = profile?.resume_reading ?? true;
+  const removePageSpacing = profile?.remove_page_spacing ?? getRemovePageSpacing();
   const exportIncludeSource = profile?.export_include_source ?? true;
   const hasNameChanged = displayNameInput.trim() !== (profile?.display_name ?? "");
 
@@ -258,6 +266,22 @@ function SettingsPage() {
               onCheckedChange={handleResumeReadingChange}
               disabled={updateMutation.isPending}
               aria-label="Resume reading position"
+            />
+          </div>
+
+          {/* Remove Space Between Pages */}
+          <div className="flex items-center justify-between gap-4 py-6">
+            <div>
+              <h2 className="text-sm font-medium text-foreground">Remove space between pages</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Display PDF pages continuously without vertical gaps between pages.
+              </p>
+            </div>
+            <Switch
+              checked={removePageSpacing}
+              onCheckedChange={handleRemovePageSpacingChange}
+              disabled={updateMutation.isPending}
+              aria-label="Remove space between pages"
             />
           </div>
 
