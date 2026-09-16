@@ -49,6 +49,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getMyProfile, updateMyProfile } from "@/lib/profile";
 import { toast } from "sonner";
+import { PatchSlot } from "@/patch/PatchSlot";
 import "./notes-editor.css";
 
 export interface NotesEditorHandle {
@@ -94,9 +95,11 @@ function ToolbarButton({
 
 function Toolbar({
   editor,
+  documentId,
   documentTitle,
 }: {
   editor: Editor;
+  documentId?: string | undefined;
   documentTitle?: string | undefined;
 }) {
   const queryClient = useQueryClient();
@@ -219,7 +222,23 @@ function Toolbar({
         <LinkIcon className="h-4 w-4" />
       </ToolbarButton>
 
-      <div className="ml-auto flex items-center">
+      <div className="ml-auto flex items-center gap-1">
+        <PatchSlot
+          slotId="slot_notes_pane_header_actions"
+          context={{
+            documentId,
+            documentTitle,
+            onInsertNote: (text: string) => {
+              editor.chain().focus().insertContent(text).run();
+            },
+            onToast: (msg: string, type?: 'success' | 'info' | 'error') => {
+              if (type === 'success') toast.success(msg);
+              else if (type === 'error') toast.error(msg);
+              else toast.info(msg);
+            },
+          }}
+        />
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -313,7 +332,7 @@ export const NotesEditor = forwardRef<NotesEditorHandle, NotesEditorProps>(funct
 
   return (
     <div className="notes-editor flex h-full min-h-0 flex-col bg-background">
-      <Toolbar editor={editor} documentTitle={documentTitle} />
+      <Toolbar editor={editor} documentId={documentId} documentTitle={documentTitle} />
       <div className="min-h-0 flex-1 overflow-y-auto" onClick={() => editor.commands.focus()}>
         <EditorContent editor={editor} className="mx-auto h-full max-w-2xl" />
       </div>

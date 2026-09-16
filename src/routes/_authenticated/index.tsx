@@ -33,6 +33,7 @@ import { getMyProfile } from "@/lib/profile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AppHeader } from "@/components/AppHeader";
+import { PatchSlot } from "@/patch/PatchSlot";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -247,13 +248,14 @@ function Library() {
           />
         </div>
 
-        <div className="mt-6">
+        <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search your documents"
             className="squircle h-10 max-w-sm"
           />
+          <PatchSlot slotId="slot_library_header_actions" />
         </div>
 
         <div className="mt-8 border-t border-border">

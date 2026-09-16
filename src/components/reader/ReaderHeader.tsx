@@ -28,8 +28,13 @@ import { Button } from "@/components/ui/button";
 import type { WorkspaceMode } from "./types";
 import { cn } from "@/lib/utils";
 
+import { PatchSlot } from "@/patch/PatchSlot";
+
 interface ReaderHeaderProps {
   title: string;
+  documentId?: string;
+  currentPage?: number;
+  totalPages?: number;
   isFullscreen: boolean;
   hasOutline: boolean;
   isTocOpen: boolean;
@@ -44,6 +49,9 @@ interface ReaderHeaderProps {
 
 export function ReaderHeader({
   title,
+  documentId,
+  currentPage,
+  totalPages,
   isFullscreen,
   hasOutline,
   isTocOpen,
@@ -57,7 +65,7 @@ export function ReaderHeader({
 }: ReaderHeaderProps) {
   return (
     <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-border bg-background px-3 sm:px-5">
-      {/* Left: Back to library, Table of Contents, Document title */}
+      {/* Left: Back to library, Table of Contents, Document title, and PatchSlot */}
       <div className="flex min-w-0 items-center gap-2">
         <Link
           to="/"
@@ -91,6 +99,17 @@ export function ReaderHeader({
         <span className="hidden max-w-[180px] truncate text-sm font-medium text-foreground/85 md:inline lg:max-w-[320px]">
           {title}
         </span>
+
+        {/* patch.md Toolbar Actions Slot */}
+        <PatchSlot
+          slotId="slot_reader_toolbar_actions"
+          context={{
+            documentId,
+            documentTitle: title,
+            currentPage,
+            totalPages,
+          }}
+        />
       </div>
 
       {/* Right: Workspace mode switcher, Zoom, Search, Fullscreen */}

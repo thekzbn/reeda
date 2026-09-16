@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,10 +27,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Sparkles } from "lucide-react";
+import { PatchManagerSheet } from "@/patch/PatchManagerSheet";
 
 export function AppHeader({ email }: { email?: string | null | undefined }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [patchesOpen, setPatchesOpen] = useState(false);
 
   async function signOut() {
     await queryClient.cancelQueries();
@@ -44,26 +48,41 @@ export function AppHeader({ email }: { email?: string | null | undefined }) {
         <Link to="/" className="text-[15px] font-semibold tracking-tight">
           Reeda
         </Link>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="squircle text-muted-foreground">
-              {email ?? "Account"}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem asChild>
-              <Link to="/settings">Settings</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/privacy">Privacy</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/terms">Terms</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => void signOut()}>Sign out</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="squircle gap-1 text-xs text-muted-foreground hover:text-foreground"
+            onClick={() => setPatchesOpen(true)}
+          >
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <span>Patches</span>
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="squircle text-muted-foreground">
+                {email ?? "Account"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem asChild>
+                <Link to="/settings">Settings</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/privacy">Privacy</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/terms">Terms</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => void signOut()}>Sign out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
+
+      <PatchManagerSheet open={patchesOpen} onOpenChange={setPatchesOpen} />
     </header>
   );
 }
+

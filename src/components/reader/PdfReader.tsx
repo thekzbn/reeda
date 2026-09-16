@@ -1121,6 +1121,9 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
     >
       <ReaderHeader
         title={title}
+        documentId={documentId}
+        currentPage={currentPage}
+        totalPages={totalPages}
         isFullscreen={isFullscreen}
         hasOutline={outline !== null && outline.length > 0}
         isTocOpen={isTocOpen}
