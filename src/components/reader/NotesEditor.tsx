@@ -323,7 +323,7 @@ function Toolbar({
               </>
             )}
 
-            {isCitationPluginEnabled && (
+            {!isCitationPluginEnabled && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuCheckboxItem

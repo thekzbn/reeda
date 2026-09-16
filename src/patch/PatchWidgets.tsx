@@ -240,7 +240,36 @@ export function PublishAndReportWidget({ context }: { context?: PluginExecutionC
     let templateText = '';
     switch (type) {
       case 'cornell':
-        templateText = `\n\n# Cornell Notes: ${docTitle}\n*Date: ${todayStr} | Source: ${docTitle}*\n\n| Cues & Keywords | Main Notes & Outlines |\n| :--- | :--- |\n| **Key Question 1**<br>What is the primary thesis? | • Main argument point<br>• Supporting quote or evidence<br>• Analysis |\n| **Key Concept / Term**<br>Core definition | • Detailed breakdown<br>• Explanatory note |\n| **Key Question 2**<br>What are the implications? | • Impact & conclusions<br>• Next steps |\n\n---\n\n### Summary\n> **Synthesize Main Takeaways:**  \n> Write 2–3 sentences synthesizing the key conclusions connecting the cues on the left with the main notes on the right.\n\n`;
+        templateText = `\n\n# CORNELL NOTES
+**Source:** ${docTitle}  
+**Date:** ${todayStr}
+
+---
+
+### 📌 Cues & Questions
+*Key concepts, core questions, and prompt vocabulary:*
+- **Key Question 1:** What is the primary thesis of this document?
+- **Core Concept / Term:** 
+- **Key Question 2:** What evidence supports the central claim?
+
+---
+
+### 📝 Main Notes & Outlines
+*Detailed notes, supporting evidence, and structural breakdown:*
+- **Main Point 1:**
+  - Supporting detail / quote from text
+  - Analysis and explanation
+- **Main Point 2:**
+  - Supporting detail / data reference
+  - Key takeaways
+
+---
+
+### 💡 Summary & Synthesis
+> **Synthesis:**  
+> Write a 2–3 sentence summary connecting the cues on the left/above with the main notes into a cohesive conclusion.
+
+`;
         break;
       case 'exec':
         templateText = `\n\n# Executive Summary\n**Document:** ${docTitle}  \n**Date:** ${todayStr}  \n\n## Core Thesis\nInsert the primary argument or goal of this reading.\n\n## Key Findings\n1. First major insight...\n2. Second major insight...\n3. Third major insight...\n\n## Action Items\n- [ ] Follow up on reference...\n- [ ] Synthesize findings into report...\n\n`;
