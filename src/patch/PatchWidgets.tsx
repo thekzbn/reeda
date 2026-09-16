@@ -123,18 +123,20 @@ export function CitationFormatterWidget({ context }: { context?: PluginExecution
   const finalTitle = apiMeta?.title?.trim() || oceanMeta.title;
   const finalAuthor = apiMeta?.author?.trim() || oceanMeta.author;
   const finalYear = apiMeta?.year?.trim() || String(currentYear);
-  const finalPublisher = apiMeta?.publisher?.trim() || 'Reeda Digital Edition';
+  const finalPublisher = apiMeta?.publisher?.trim() || '';
 
   const handleInsert = (format: 'apa' | 'bibtex' | 'chicago' | 'mla') => {
     let citationText = '';
+    const pubSuffix = finalPublisher ? ` ${finalPublisher}.` : '';
+    const pubBib = finalPublisher ? `\n  publisher = {${finalPublisher}},` : '';
 
     switch (format) {
       case 'apa':
-        citationText = `\n\n> **Citation (APA):** ${finalAuthor} (${finalYear}). *${finalTitle}* (p. ${page}). ${finalPublisher}.\n`;
+        citationText = `\n\n> **Citation (APA):** ${finalAuthor} (${finalYear}). *${finalTitle}* (p. ${page}).${pubSuffix}\n`;
         break;
       case 'bibtex':
         const citeKey = finalTitle.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12) + finalYear;
-        citationText = `\n\n\`\`\`bibtex\n@misc{${citeKey},\n  title = {${finalTitle}},\n  author = {${finalAuthor}},\n  year = {${finalYear}},\n  publisher = {${finalPublisher}},\n  note = {Page ${page}}\n}\n\`\`\`\n`;
+        citationText = `\n\n\`\`\`bibtex\n@misc{${citeKey},\n  title = {${finalTitle}},\n  author = {${finalAuthor}},\n  year = {${finalYear}},${pubBib}\n  note = {Page ${page}}\n}\n\`\`\`\n`;
         break;
       case 'chicago':
         citationText = `\n\n> **Citation (Chicago):** ${finalAuthor}, *${finalTitle}* (${finalYear}), p. ${page}.\n`;
