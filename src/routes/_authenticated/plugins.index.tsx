@@ -81,45 +81,44 @@ function PluginsIndexPage() {
           */}
         </div>
 
-        <div className="border-t border-border">
+        <div className="rounded-xl border border-border overflow-hidden divide-y divide-border">
           {plugins.length === 0 ? (
-            <div className="border-b border-border py-12 text-center text-xs text-muted-foreground">
+            <div className="py-12 text-center text-xs text-muted-foreground">
               No plugins installed.
             </div>
           ) : (
             plugins.map((plugin) => (
-              <div key={plugin.id} className="border-b border-border py-1">
-                <div
-                  onClick={() =>
-                    navigate({
-                      to: "/plugins/$pluginId",
-                      params: { pluginId: plugin.id },
-                    })
-                  }
-                  className="group flex cursor-pointer items-center justify-between gap-6 rounded-lg px-3 py-4 transition-colors hover:bg-muted/30"
-                >
-                  <div className="min-w-0 flex-1">
-                    <h2 className="text-sm font-medium text-foreground">
-                      {plugin.name}
-                    </h2>
-                    <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                      {plugin.description}
-                    </p>
-                  </div>
+              <div
+                key={plugin.id}
+                onClick={() =>
+                  navigate({
+                    to: "/plugins/$pluginId",
+                    params: { pluginId: plugin.id },
+                  })
+                }
+                className="group flex cursor-pointer items-center justify-between gap-6 px-5 py-4 transition-colors hover:bg-muted/30"
+              >
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-sm font-medium text-foreground">
+                    {plugin.name}
+                  </h2>
+                  <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                    {plugin.description}
+                  </p>
+                </div>
 
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <Switch
-                        checked={plugin.enabled}
-                        onCheckedChange={(checked) => {
-                          pluginHost.setEnabled(plugin.id, checked);
-                          toast.success(`${plugin.name} ${checked ? "enabled" : "disabled"}.`);
-                        }}
-                        aria-label={`Toggle ${plugin.name}`}
-                      />
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
+                <div className="flex items-center gap-3 shrink-0">
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Switch
+                      checked={plugin.enabled}
+                      onCheckedChange={(checked) => {
+                        pluginHost.setEnabled(plugin.id, checked);
+                        toast.success(`${plugin.name} ${checked ? "enabled" : "disabled"}.`);
+                      }}
+                      aria-label={`Toggle ${plugin.name}`}
+                    />
                   </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
                 </div>
               </div>
             ))
