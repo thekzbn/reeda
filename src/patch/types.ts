@@ -65,6 +65,7 @@ export interface PluginExecutionContext {
   extractedMetadata?: { title?: string; author?: string; year?: string; publisher?: string } | null;
   selectedText?: string;
   notesContent?: string;
+  getNotesMarkdown?: () => string;
   activeTagFilter?: string | null;
   onSelectTagFilter?: (tag: string | null) => void;
   onInsertNote?: (text: string) => void;

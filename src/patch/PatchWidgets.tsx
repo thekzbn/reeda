@@ -225,6 +225,134 @@ export function LibraryTagsWidget({ context }: { context?: PluginExecutionContex
   );
 }
 
+/**
+ * 4. Publish & Report Widget (Note Templates & Exporter)
+ * Slot: slot_notes_pane_header_actions
+ * Inserts structured templates (Cornell, Executive Summary, Lit Review, Q&A) and exports notes to HTML, Markdown, or PDF.
+ */
+export function PublishAndReportWidget({ context }: { context?: PluginExecutionContext }) {
+  const docTitle = context?.documentTitle?.trim() || 'Untitled Document';
+  const author = context?.extractedMetadata?.author || 'Author';
+  const totalPages = context?.totalPages;
+  const todayStr = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const handleInsertTemplate = (type: 'cornell' | 'exec' | 'lit' | 'qa') => {
+    let templateText = '';
+    switch (type) {
+      case 'cornell':
+        templateText = `\n\n# Cornell Notes: ${docTitle}\n*Date: ${todayStr} | Source: ${docTitle}*\n\n## Cues / Keywords\n- Key Concept 1\n- Key Question\n\n## Notes\n- Detailed note point...\n- Supporting evidence or quote...\n\n## Summary\n> Synthesize main takeaways in 2-3 sentences here.\n\n`;
+        break;
+      case 'exec':
+        templateText = `\n\n# Executive Summary\n**Document:** ${docTitle}  \n**Date:** ${todayStr}  \n\n## Core Thesis\nInsert the primary argument or goal of this reading.\n\n## Key Findings\n1. First major insight...\n2. Second major insight...\n3. Third major insight...\n\n## Action Items\n- [ ] Follow up on reference...\n- [ ] Synthesize findings into report...\n\n`;
+        break;
+      case 'lit':
+        templateText = `\n\n# Literature Review\n**Title:** ${docTitle}  \n**Author:** ${author}  \n**Review Date:** ${todayStr}  \n\n## 1. Research Question & Purpose\n\n## 2. Methodology & Evidence\n\n## 3. Key Arguments & Findings\n\n## 4. Critical Assessment & Gaps\n- Strengths:\n- Limitations:\n\n## 5. Relevance & Connections\n\n`;
+        break;
+      case 'qa':
+        templateText = `\n\n# Q&A Log: ${docTitle}\n*Reading Date: ${todayStr}*\n\n### Q1: What is the main thesis of this section?\n**A:** \n\n### Q2: What evidence supports this claim?\n**A:** \n\n### Q3: How does this apply to our study?\n**A:** \n\n`;
+        break;
+    }
+
+    if (context?.onInsertNote) {
+      context.onInsertNote(templateText);
+      context.onToast?.(`Inserted ${type === 'exec' ? 'Executive Summary' : type === 'lit' ? 'Literature Review' : type === 'qa' ? 'Q&A Log' : 'Cornell Notes'} template`, 'success');
+    }
+  };
+
+  const handleExportFormat = async (format: 'html' | 'markdown' | 'pdf') => {
+    const markdown = context?.getNotesMarkdown ? context.getNotesMarkdown() : context?.notesContent || '';
+    if (format === 'html') {
+      const { exportNotesToHtml } = await import('@/lib/notes-exporter');
+      exportNotesToHtml({
+        markdown,
+        sourceTitle: docTitle,
+        author,
+        totalPages,
+        readingDate: todayStr,
+      });
+      context?.onToast?.('Notes exported as formatted HTML', 'success');
+    } else if (format === 'markdown') {
+      const { exportNotesToMarkdown } = await import('@/lib/notes-exporter');
+      exportNotesToMarkdown({
+        markdown,
+        sourceTitle: docTitle,
+        author,
+        totalPages,
+        readingDate: todayStr,
+      });
+      context?.onToast?.('Notes exported as Markdown file', 'success');
+    } else if (format === 'pdf') {
+      const { exportNotesToPdf } = await import('@/lib/notes-pdf');
+      exportNotesToPdf({
+        markdown,
+        sourceTitle: docTitle,
+        includeSource: true,
+        fileName: `${docTitle} Notes`,
+      });
+      context?.onToast?.('Notes exported as PDF', 'success');
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      {/* Templates Menu */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="squircle h-8 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+            title="Insert Note Template"
+          >
+            <span>Templates</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem onClick={() => handleInsertTemplate('cornell')} className="cursor-pointer text-xs">
+            Cornell Note-taking
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleInsertTemplate('exec')} className="cursor-pointer text-xs">
+            Executive Summary
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleInsertTemplate('lit')} className="cursor-pointer text-xs">
+            Literature Review
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleInsertTemplate('qa')} className="cursor-pointer text-xs">
+            Q&A Log
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Publish / Multi-Format Export Menu */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="squircle h-8 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+            title="Publish & Export Notes"
+          >
+            <span>Publish</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem onClick={() => handleExportFormat('html')} className="cursor-pointer text-xs">
+            Formatted HTML (.html)
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleExportFormat('markdown')} className="cursor-pointer text-xs">
+            Plain Markdown (.md)
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleExportFormat('pdf')} className="cursor-pointer text-xs">
+            Styled PDF Document
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
 export const PLUGIN_WIDGET_REGISTRY: Record<
   string,
   React.ComponentType<{ context?: PluginExecutionContext }>
@@ -232,6 +360,7 @@ export const PLUGIN_WIDGET_REGISTRY: Record<
   ReadingTimeCalculatorWidget,
   CitationFormatterWidget,
   LibraryTagsWidget,
+  PublishAndReportWidget,
 };
 
 export const PATCH_WIDGET_REGISTRY = PLUGIN_WIDGET_REGISTRY;

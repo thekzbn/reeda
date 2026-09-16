@@ -228,6 +228,10 @@ function Toolbar({
           context={{
             documentId,
             documentTitle,
+            getNotesMarkdown: () => {
+              const storage = editor.storage["markdown"] as { getMarkdown: () => string } | undefined;
+              return storage ? storage.getMarkdown() : editor.getText();
+            },
             onInsertNote: (text: string) => {
               editor.chain().focus().insertContent(text).run();
             },
