@@ -370,8 +370,17 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
     }
   };
 
-  const { pdfDoc, totalPages, outline, firstPageDimension, isLoading, error, pageWordCounts } =
-    usePdfDocument(documentUrl);
+  const {
+    pdfDoc,
+    totalPages,
+    outline,
+    firstPageDimension,
+    isLoading,
+    error,
+    pageWordCounts,
+    detectedIsbn,
+    extractedMetadata,
+  } = usePdfDocument(documentUrl);
   const [remainingWords, setRemainingWords] = useState<number | undefined>(undefined);
 
   useEffect(() => {
@@ -1201,6 +1210,9 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
         totalPages={totalPages}
         pageWordCounts={pageWordCounts}
         remainingWords={remainingWords}
+        isPdfVisible={isPdfVisible}
+        detectedIsbn={detectedIsbn}
+        extractedMetadata={extractedMetadata}
         isFullscreen={isFullscreen}
         hasOutline={outline !== null && outline.length > 0}
         isTocOpen={isTocOpen}

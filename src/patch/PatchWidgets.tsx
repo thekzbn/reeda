@@ -18,14 +18,70 @@ import type { PluginExecutionContext } from './types';
  * Slot: slot_reader_toolbar_actions
  * Shows a quiet, non-distracting reading pace calculation in the reader header.
  */
+export interface CitationMetadata {
+  title: string;
+  author: string;
+  year?: string;
+  publisher?: string;
+}
+
+export function parseOceanOfPdfTitle(rawTitle: string): CitationMetadata {
+  let clean = rawTitle.replace(/\.pdf$/i, '').trim();
+
+  // Strip leading OceanofPDF prefixes
+  const oceanRegex = /^(?:https?:\/\/)?(?:www\.)?oceanofpdf(?:\.com)?_?/i;
+  clean = clean.replace(oceanRegex, '');
+
+  let title = clean;
+  let author = '';
+
+  if (clean.includes('_-_')) {
+    const parts = clean.split('_-_');
+    title = parts[0] || clean;
+    author = parts[1] || '';
+  } else if (clean.includes(' - ')) {
+    const parts = clean.split(' - ');
+    title = parts[0] || clean;
+    author = parts[1] || '';
+  }
+
+  // Replace underscores with spaces
+  title = title.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+  author = author.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+
+  // Title Case capitalization
+  const capitalizeWords = (str: string) =>
+    str
+      .toLowerCase()
+      .split(' ')
+      .map((word, idx) => {
+        const lower = ['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 'of', 'in', 'with'];
+        if (idx > 0 && lower.includes(word)) return word;
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      })
+      .join(' ');
+
+  return {
+    title: capitalizeWords(title) || 'Untitled Document',
+    author: author ? capitalizeWords(author) : 'Author, A.',
+  };
+}
+
+/**
+ * 1. Reading Time Estimator Widget
+ * Slot: slot_reader_toolbar_actions
+ * Shows a quiet, non-distracting reading pace calculation in the reader header (hidden when Notes mode active).
+ */
 export function ReadingTimeCalculatorWidget({ context }: { context?: PluginExecutionContext }) {
+  const isPdfVisible = context?.isPdfVisible ?? true;
   const totalPages = context?.totalPages ?? 1;
   const currentPage = context?.currentPage ?? 1;
   const remainingPages = Math.max(0, totalPages - currentPage);
   const remainingWords = context?.remainingWords;
   const pageWordCounts = context?.pageWordCounts;
 
-  if (totalPages <= 1) return null;
+  // Hide when PDF is not visible (Notes only mode) or single-page PDF
+  if (!isPdfVisible || totalPages <= 1) return null;
 
   let totalMinutesRemaining: number;
   if (typeof remainingWords === 'number' && remainingWords >= 0) {
@@ -52,35 +108,47 @@ export function ReadingTimeCalculatorWidget({ context }: { context?: PluginExecu
 /**
  * 2. Academic Citation Formatter Widget
  * Slot: slot_notes_pane_header_actions
- * Formats standardized citations (APA, BibTeX, Chicago, MLA) and appends to notes.
+ * Formats standardized citations (APA, BibTeX, Chicago, MLA) with ISBN API lookup and OceanofPDF title/author parsing backup.
  */
 export function CitationFormatterWidget({ context }: { context?: PluginExecutionContext }) {
-  const title = context?.documentTitle?.trim() || 'Untitled Document';
+  const rawTitle = context?.documentTitle?.trim() || 'Untitled Document';
   const page = context?.currentPage || 1;
-  const year = new Date().getFullYear();
+  const currentYear = new Date().getFullYear();
+
+  // 1. API Metadata from scanned ISBN (if available)
+  const apiMeta = context?.extractedMetadata;
+  // 2. OceanofPDF Sanitized Title & Author fallback
+  const oceanMeta = parseOceanOfPdfTitle(rawTitle);
+
+  const finalTitle = apiMeta?.title?.trim() || oceanMeta.title;
+  const finalAuthor = apiMeta?.author?.trim() || oceanMeta.author;
+  const finalYear = apiMeta?.year?.trim() || String(currentYear);
+  const finalPublisher = apiMeta?.publisher?.trim() || 'Reeda Digital Edition';
 
   const handleInsert = (format: 'apa' | 'bibtex' | 'chicago' | 'mla') => {
     let citationText = '';
 
     switch (format) {
       case 'apa':
-        citationText = `\n\n> **Citation (APA):** Author, A. (${year}). *${title}* (p. ${page}). Reeda Digital Edition.\n`;
+        citationText = `\n\n> **Citation (APA):** ${finalAuthor} (${finalYear}). *${finalTitle}* (p. ${page}). ${finalPublisher}.\n`;
         break;
       case 'bibtex':
-        const citeKey = title.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12) + year;
-        citationText = `\n\n\`\`\`bibtex\n@misc{${citeKey},\n  title = {${title}},\n  year = {${year}},\n  note = {Page ${page}}\n}\n\`\`\`\n`;
+        const citeKey = finalTitle.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12) + finalYear;
+        citationText = `\n\n\`\`\`bibtex\n@misc{${citeKey},\n  title = {${finalTitle}},\n  author = {${finalAuthor}},\n  year = {${finalYear}},\n  publisher = {${finalPublisher}},\n  note = {Page ${page}}\n}\n\`\`\`\n`;
         break;
       case 'chicago':
-        citationText = `\n\n> **Citation (Chicago):** Author, *${title}* (${year}), ${page}.\n`;
+        citationText = `\n\n> **Citation (Chicago):** ${finalAuthor}, *${finalTitle}* (${finalYear}), p. ${page}.\n`;
         break;
       case 'mla':
-        citationText = `\n\n> **Citation (MLA):** Author. *${title}*, ${year}, p. ${page}.\n`;
+        citationText = `\n\n> **Citation (MLA):** ${finalAuthor}. *${finalTitle}*, ${finalYear}, p. ${page}.\n`;
         break;
     }
 
     if (context?.onInsertNote) {
       context.onInsertNote(citationText);
-      context.onToast?.(`Inserted ${format.toUpperCase()} citation into notes`, 'success');
+      const isIsbnSource = !!apiMeta?.title;
+      const sourceLabel = isIsbnSource ? 'ISBN lookup' : 'OceanofPDF title parser';
+      context.onToast?.(`Inserted ${format.toUpperCase()} citation into notes (${sourceLabel})`, 'success');
     }
   };
 

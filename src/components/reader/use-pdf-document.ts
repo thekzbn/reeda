@@ -21,6 +21,13 @@ import type { PDFDocumentProxy } from "pdfjs-dist";
 import { pdfjsLib, PDFJS_VERSION, WORKER_SRC } from "./pdf-worker";
 import type { OutlineItem, PageDimension } from "./types";
 
+export interface ExtractedMetadata {
+  title?: string;
+  author?: string;
+  year?: string;
+  publisher?: string;
+}
+
 interface UsePdfDocumentResult {
   pdfDoc: PDFDocumentProxy | null;
   totalPages: number;
@@ -29,6 +36,8 @@ interface UsePdfDocumentResult {
   isLoading: boolean;
   error: string | null;
   pageWordCounts: number[];
+  detectedIsbn: string | null;
+  extractedMetadata: ExtractedMetadata | null;
 }
 
 export function usePdfDocument(url: string | null): UsePdfDocumentResult {
@@ -39,6 +48,8 @@ export function usePdfDocument(url: string | null): UsePdfDocumentResult {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [pageWordCounts, setPageWordCounts] = useState<number[]>([]);
+  const [detectedIsbn, setDetectedIsbn] = useState<string | null>(null);
+  const [extractedMetadata, setExtractedMetadata] = useState<ExtractedMetadata | null>(null);
 
   useEffect(() => {
     if (!url) {
@@ -50,6 +61,8 @@ export function usePdfDocument(url: string | null): UsePdfDocumentResult {
     setIsLoading(true);
     setError(null);
     setPageWordCounts([]);
+    setDetectedIsbn(null);
+    setExtractedMetadata(null);
 
     if (typeof window !== "undefined" && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
       pdfjsLib.GlobalWorkerOptions.workerSrc = WORKER_SRC;
@@ -97,6 +110,50 @@ export function usePdfDocument(url: string | null): UsePdfDocumentResult {
           }
         };
         void extractWordCounts();
+
+        // Scan first 5 pages for ISBN numbers and fetch book metadata from Open Library / Google Books API
+        const scanAndFetchIsbn = async () => {
+          let foundIsbn: string | null = null;
+          const maxScan = Math.min(5, doc.numPages);
+          const isbnRegex = /\b(?:ISBN(?:-10|-13)?:?\s*)?(97[89][-\s]?\d{1,5}[-\s]?\d{1,7}[-\s]?\d{1,7}[-\s]?[\dX]|\d{1,5}[-\s]?\d{1,7}[-\s]?\d{1,7}[-\s]?[\dX])\b/gi;
+
+          for (let i = 1; i <= maxScan; i++) {
+            if (isCancelled || foundIsbn) break;
+            try {
+              const page = await doc.getPage(i);
+              const textContent = await page.getTextContent();
+              const fullText = textContent.items
+                .map((item) => ("str" in item ? item.str : ""))
+                .join(" ");
+
+              const matches = fullText.match(isbnRegex);
+              if (matches && matches.length > 0) {
+                for (const m of matches) {
+                  const rawDigit = m.replace(/[^0-9X]/gi, "");
+                  if (rawDigit.length === 13 || rawDigit.length === 10) {
+                    foundIsbn = rawDigit;
+                    break;
+                  }
+                }
+              }
+            } catch {
+              // Ignore page scan failure
+            }
+          }
+
+          if (foundIsbn && !isCancelled) {
+            setDetectedIsbn(foundIsbn);
+            try {
+              const meta = await fetchMetadataForIsbn(foundIsbn);
+              if (meta && !isCancelled) {
+                setExtractedMetadata(meta);
+              }
+            } catch {
+              // Ignore metadata fetch error
+            }
+          }
+        };
+        void scanAndFetchIsbn();
 
         // Fetch initial page dimension from page 1
         try {
@@ -163,7 +220,58 @@ export function usePdfDocument(url: string | null): UsePdfDocumentResult {
     isLoading,
     error,
     pageWordCounts,
+    detectedIsbn,
+    extractedMetadata,
   };
+}
+
+async function fetchMetadataForIsbn(isbn: string): Promise<ExtractedMetadata | null> {
+  const cleanIsbn = isbn.replace(/[^0-9X]/gi, "");
+  if (!cleanIsbn || (cleanIsbn.length !== 10 && cleanIsbn.length !== 13)) return null;
+
+  try {
+    // Attempt 1: Open Library API
+    const openLibRes = await fetch(
+      `https://openlibrary.org/api/books?bibkeys=ISBN:${cleanIsbn}&format=json&jscmd=data`,
+    );
+    if (openLibRes.ok) {
+      const json = (await openLibRes.json()) as Record<string, { title?: string; authors?: Array<{ name: string }>; publish_date?: string; publishers?: Array<{ name: string }> }>;
+      const bookData = json[`ISBN:${cleanIsbn}`];
+      if (bookData && bookData.title) {
+        return {
+          title: bookData.title,
+          author: bookData.authors?.map((a) => a.name).join(", "),
+          year: bookData.publish_date,
+          publisher: bookData.publishers?.map((p) => p.name).join(", "),
+        };
+      }
+    }
+  } catch {
+    // Fallback on network/CORS error
+  }
+
+  try {
+    // Attempt 2: Google Books API fallback
+    const googleRes = await fetch(
+      `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`,
+    );
+    if (googleRes.ok) {
+      const json = (await googleRes.json()) as { items?: Array<{ volumeInfo?: { title?: string; authors?: string[]; publishedDate?: string; publisher?: string } }> };
+      const item = json.items?.[0]?.volumeInfo;
+      if (item && item.title) {
+        return {
+          title: item.title,
+          author: item.authors?.join(", "),
+          year: item.publishedDate,
+          publisher: item.publisher,
+        };
+      }
+    }
+  } catch {
+    // Ignore fetch error
+  }
+
+  return null;
 }
 
 interface RawOutlineItem {
