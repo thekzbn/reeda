@@ -1,25 +1,47 @@
+import { useEffect, useState } from "react";
 import { Toaster as Sonner } from "sonner";
 import { Check, AlertCircle, Info, Loader2 } from "lucide-react";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
 const Toaster = ({ ...props }: ToasterProps) => {
+  const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
+
+  useEffect(() => {
+    const updateTheme = () => {
+      const isDark = document.documentElement.classList.contains("dark");
+      setTheme(isDark ? "dark" : "light");
+    };
+
+    updateTheme();
+
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <Sonner
-      className="toaster group"
+      theme={theme}
+      className="toaster group font-sans"
       toastOptions={{
         classNames: {
           toast:
-            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border group-[.toaster]:border-border group-[.toaster]:shadow-none group-[.toaster]:rounded-lg group-[.toaster]:px-3.5 group-[.toaster]:py-2.5 group-[.toaster]:text-xs group-[.toaster]:font-medium group-[.toaster]:tracking-tight group-[.toaster]:gap-2.5",
-          description: "group-[.toast]:text-muted-foreground group-[.toast]:text-xs group-[.toast]:font-normal",
+            "group toast font-sans group-[.toaster]:font-sans group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border group-[.toaster]:border-border group-[.toaster]:shadow-none group-[.toaster]:rounded-lg group-[.toaster]:px-3.5 group-[.toaster]:py-2.5 group-[.toaster]:text-xs group-[.toaster]:font-medium group-[.toaster]:tracking-tight group-[.toaster]:gap-2.5",
+          title: "group-[.toast]:font-sans group-[.toast]:text-xs group-[.toast]:font-medium group-[.toast]:text-foreground",
+          description: "group-[.toast]:text-muted-foreground group-[.toast]:text-xs group-[.toast]:font-normal group-[.toast]:font-sans",
           actionButton:
-            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground group-[.toast]:rounded-md group-[.toast]:px-2.5 group-[.toast]:py-1 group-[.toast]:text-xs group-[.toast]:font-medium",
+            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground group-[.toast]:rounded-md group-[.toast]:px-2.5 group-[.toast]:py-1 group-[.toast]:text-xs group-[.toast]:font-medium group-[.toast]:font-sans",
           cancelButton:
-            "group-[.toast]:bg-secondary group-[.toast]:text-secondary-foreground group-[.toast]:rounded-md group-[.toast]:px-2.5 group-[.toast]:py-1 group-[.toast]:text-xs",
-          success: "group-[.toaster]:border-border",
-          error: "group-[.toaster]:border-destructive/50",
-          warning: "group-[.toaster]:border-amber-500/40",
-          info: "group-[.toaster]:border-border",
+            "group-[.toast]:bg-secondary group-[.toast]:text-secondary-foreground group-[.toast]:rounded-md group-[.toast]:px-2.5 group-[.toast]:py-1 group-[.toast]:text-xs group-[.toast]:font-sans",
+          success: "group-[.toaster]:border-border group-[.toaster]:bg-background group-[.toaster]:text-foreground",
+          error: "group-[.toaster]:border-destructive/50 group-[.toaster]:bg-background group-[.toaster]:text-foreground",
+          warning: "group-[.toaster]:border-amber-500/40 group-[.toaster]:bg-background group-[.toaster]:text-foreground",
+          info: "group-[.toaster]:border-border group-[.toaster]:bg-background group-[.toaster]:text-foreground",
         },
       }}
       icons={{
