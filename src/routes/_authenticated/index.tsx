@@ -199,7 +199,16 @@ function Library() {
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const docs = documents.data ?? [];
+  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
+
+  const rawDocs = documents.data ?? [];
+  const docs = rawDocs.filter((doc) => {
+    if (!activeTagFilter) return true;
+    if (activeTagFilter === "To Read") return !doc.last_opened_at;
+    if (activeTagFilter === "In Progress") return !!doc.last_opened_at;
+    if (activeTagFilter === "Synthesized") return doc.title.toLowerCase().includes("notes") || !!doc.last_opened_at;
+    return true;
+  });
 
   return (
     <div className="relative min-h-screen">
@@ -255,7 +264,13 @@ function Library() {
             placeholder="Search your documents"
             className="squircle h-10 max-w-sm"
           />
-          <PatchSlot slotId="slot_library_header_actions" />
+          <PatchSlot
+            slotId="slot_library_header_actions"
+            context={{
+              activeTagFilter,
+              onSelectTagFilter: setActiveTagFilter,
+            }}
+          />
         </div>
 
         <div className="mt-8 border-t border-border">

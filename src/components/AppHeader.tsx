@@ -24,16 +24,16 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
-import { PatchManagerSheet } from "@/patch/PatchManagerSheet";
+import { PluginDirectoryDialog } from "@/patch/PluginDirectoryDialog";
 
 export function AppHeader({ email }: { email?: string | null | undefined }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [patchesOpen, setPatchesOpen] = useState(false);
+  const [pluginsOpen, setPluginsOpen] = useState(false);
 
   async function signOut() {
     await queryClient.cancelQueries();
@@ -48,24 +48,18 @@ export function AppHeader({ email }: { email?: string | null | undefined }) {
         <Link to="/" className="text-[15px] font-semibold tracking-tight">
           Reeda
         </Link>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="squircle gap-1 text-xs text-muted-foreground hover:text-foreground"
-            onClick={() => setPatchesOpen(true)}
-          >
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            <span>Patches</span>
-          </Button>
-
+        <div className="flex items-center gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="squircle text-muted-foreground">
+              <Button variant="ghost" size="sm" className="squircle text-muted-foreground hover:text-foreground">
                 {email ?? "Account"}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem onClick={() => setPluginsOpen(true)} className="cursor-pointer">
+                Plugins
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link to="/settings">Settings</Link>
               </DropdownMenuItem>
@@ -81,7 +75,7 @@ export function AppHeader({ email }: { email?: string | null | undefined }) {
         </div>
       </div>
 
-      <PatchManagerSheet open={patchesOpen} onOpenChange={setPatchesOpen} />
+      <PluginDirectoryDialog open={pluginsOpen} onOpenChange={setPluginsOpen} />
     </header>
   );
 }

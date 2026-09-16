@@ -1,107 +1,157 @@
 /*
- * Built-in Sandboxed Patch Widgets for Reeda
- * These components simulate the execution of pre-compiled Wasm modules
- * running within host-allocated abstract slots.
+ * Reeda Built-in Plugin Widgets (powered by patch.md)
+ * Clean, typographic, distraction-free widgets designed to follow Reeda's essentialist philosophy.
  */
 
-import React, { useState, useEffect } from 'react';
-import { Clock, BookMarked, Tag, Sparkles, Check, Copy } from 'lucide-react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import type { PatchExecutionContext } from './types';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import type { PluginExecutionContext } from './types';
 
 /**
- * Reading Time Calculator Widget
+ * 1. Reading Time Estimator Widget
  * Slot: slot_reader_toolbar_actions
+ * Shows a quiet, non-distracting reading pace calculation in the reader header.
  */
-export function ReadingTimeCalculatorWidget({ context }: { context?: PatchExecutionContext }) {
-  const [wpm] = useState(250);
+export function ReadingTimeCalculatorWidget({ context }: { context?: PluginExecutionContext }) {
   const totalPages = context?.totalPages ?? 1;
   const currentPage = context?.currentPage ?? 1;
   const remainingPages = Math.max(0, totalPages - currentPage);
-  // Assume ~350 words per page
-  const wordsPerPage = 350;
-  const totalMinutesRemaining = Math.ceil((remainingPages * wordsPerPage) / wpm);
+  
+  // Standard 250 words per minute; average PDF technical page ~300 words
+  const wordsPerPage = 300;
+  const totalMinutesRemaining = Math.max(1, Math.ceil((remainingPages * wordsPerPage) / 250));
+
+  if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center gap-1.5 rounded-full bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted">
-      <Clock className="h-3.5 w-3.5 text-primary" />
-      <span>
-        {totalMinutesRemaining === 0
-          ? 'Finished'
-          : `${totalMinutesRemaining} min left (p. ${currentPage}/${totalPages})`}
-      </span>
-    </div>
+    <span
+      className="hidden text-xs text-muted-foreground/80 lg:inline select-none"
+      title={`Estimated reading time for remaining ${remainingPages} pages`}
+    >
+      {remainingPages === 0 ? 'Completed' : `~${totalMinutesRemaining} min left`}
+    </span>
   );
 }
 
 /**
- * Citation Formatter Widget
+ * 2. Academic Citation Formatter Widget
  * Slot: slot_notes_pane_header_actions
+ * Formats standardized citations (APA, BibTeX, Chicago, MLA) and appends to notes.
  */
-export function CitationFormatterWidget({ context }: { context?: PatchExecutionContext }) {
-  const [copied, setCopied] = useState(false);
-  const title = context?.documentTitle || 'Untitled Document';
+export function CitationFormatterWidget({ context }: { context?: PluginExecutionContext }) {
+  const title = context?.documentTitle?.trim() || 'Untitled Document';
   const page = context?.currentPage || 1;
   const year = new Date().getFullYear();
 
-  const handleInsertCitation = () => {
-    const apa = `\n\n> **Citation (APA):** Author, A. (${year}). *${title}* (p. ${page}). Reeda Digital Edition.\n`;
+  const handleInsert = (format: 'apa' | 'bibtex' | 'chicago' | 'mla') => {
+    let citationText = '';
+
+    switch (format) {
+      case 'apa':
+        citationText = `\n\n> **Citation (APA):** Author, A. (${year}). *${title}* (p. ${page}). Reeda Digital Edition.\n`;
+        break;
+      case 'bibtex':
+        const citeKey = title.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12) + year;
+        citationText = `\n\n\`\`\`bibtex\n@misc{${citeKey},\n  title = {${title}},\n  year = {${year}},\n  note = {Page ${page}}\n}\n\`\`\`\n`;
+        break;
+      case 'chicago':
+        citationText = `\n\n> **Citation (Chicago):** Author, *${title}* (${year}), ${page}.\n`;
+        break;
+      case 'mla':
+        citationText = `\n\n> **Citation (MLA):** Author. *${title}*, ${year}, p. ${page}.\n`;
+        break;
+    }
+
     if (context?.onInsertNote) {
-      context.onInsertNote(apa);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-      context.onToast?.('Citation appended to your notes', 'success');
+      context.onInsertNote(citationText);
+      context.onToast?.(`Inserted ${format.toUpperCase()} citation into notes`, 'success');
     }
   };
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
-      onClick={handleInsertCitation}
-      title="Insert APA Citation for this page into notes"
-    >
-      {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <BookMarked className="h-3 w-3 text-primary" />}
-      <span>Cite</span>
-    </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="squircle h-8 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+          title="Insert Citation"
+        >
+          <span>Cite</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-36">
+        <DropdownMenuItem onClick={() => handleInsert('apa')} className="cursor-pointer text-xs">
+          APA Format
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleInsert('bibtex')} className="cursor-pointer text-xs">
+          BibTeX Block
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleInsert('chicago')} className="cursor-pointer text-xs">
+          Chicago Style
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleInsert('mla')} className="cursor-pointer text-xs">
+          MLA Format
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
 /**
- * Library Document Tags Widget
+ * 3. Library Reading Priority Filter Widget
  * Slot: slot_library_header_actions
+ * Clean typographic filter pills matching Reeda's minimalist design.
  */
-export function LibraryTagsWidget({ context }: { context?: PatchExecutionContext }) {
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+export function LibraryTagsWidget({ context }: { context?: PluginExecutionContext }) {
+  const [selectedTag, setSelectedTag] = useState<string | null>(context?.activeTagFilter ?? null);
   const tags = ['All', 'To Read', 'In Progress', 'Synthesized'];
 
+  const handleSelect = (tag: string) => {
+    const next = tag === 'All' ? null : tag;
+    setSelectedTag(next);
+    if (context?.onSelectTagFilter) {
+      context.onSelectTagFilter(next);
+    }
+  };
+
   return (
-    <div className="flex items-center gap-1.5 py-1">
+    <div className="flex items-center gap-1 overflow-x-auto py-1 text-xs">
       {tags.map(tag => {
-        const isSelected = selectedTag === tag || (tag === 'All' && selectedTag === null);
+        const isActive = (tag === 'All' && selectedTag === null) || selectedTag === tag;
         return (
-          <Badge
+          <button
             key={tag}
-            variant={isSelected ? 'default' : 'outline'}
-            className="cursor-pointer text-xs font-normal"
-            onClick={() => setSelectedTag(tag === 'All' ? null : tag)}
+            type="button"
+            onClick={() => handleSelect(tag)}
+            className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
+              isActive
+                ? 'bg-secondary font-medium text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
           >
-            <Tag className="mr-1 h-2.5 w-2.5 opacity-70" />
             {tag}
-          </Badge>
+          </button>
         );
       })}
     </div>
   );
 }
 
-export const PATCH_WIDGET_REGISTRY: Record<
+export const PLUGIN_WIDGET_REGISTRY: Record<
   string,
-  React.ComponentType<{ context?: PatchExecutionContext }>
+  React.ComponentType<{ context?: PluginExecutionContext }>
 > = {
   ReadingTimeCalculatorWidget,
   CitationFormatterWidget,
   LibraryTagsWidget,
 };
+
+export const PATCH_WIDGET_REGISTRY = PLUGIN_WIDGET_REGISTRY;

@@ -1,47 +1,47 @@
 /*
- * PatchSlot component for Reeda
- * Renders dynamically registered and active patch widgets inside abstract slot identifiers.
+ * Reeda Plugin Slot (powered by patch.md)
+ * Mounts active and enabled plugins into host-declared abstract slot regions.
  */
 
 import React, { useEffect, useState } from 'react';
-import { patchHost } from './patch-host';
-import { PATCH_WIDGET_REGISTRY } from './PatchWidgets';
-import type { ReedaSlotId, PatchExecutionContext, ReedaPatchManifest } from './types';
+import { pluginHost } from './patch-host';
+import { PLUGIN_WIDGET_REGISTRY } from './PatchWidgets';
+import type { ReedaSlotId, PluginExecutionContext, ReedaPluginManifest } from './types';
 
 interface PatchSlotProps {
   slotId: ReedaSlotId;
-  context?: PatchExecutionContext;
+  context?: PluginExecutionContext;
   className?: string;
 }
 
 export function PatchSlot({ slotId, context, className }: PatchSlotProps) {
-  const [patches, setPatches] = useState<ReedaPatchManifest[]>(() =>
-    patchHost.getBySlot(slotId)
+  const [plugins, setPlugins] = useState<ReedaPluginManifest[]>(() =>
+    pluginHost.getBySlot(slotId)
   );
 
   useEffect(() => {
-    const unsubscribe = patchHost.subscribe(() => {
-      setPatches(patchHost.getBySlot(slotId));
+    const unsubscribe = pluginHost.subscribe(() => {
+      setPlugins(pluginHost.getBySlot(slotId));
     });
     return unsubscribe;
   }, [slotId]);
 
-  if (patches.length === 0) {
+  if (plugins.length === 0) {
     return null;
   }
 
   return (
-    <div className={`patch-slot flex items-center gap-2 ${className || ''}`} data-slot-id={slotId}>
-      {patches.map(patch => {
-        const WidgetComponent = PATCH_WIDGET_REGISTRY[patch.ui_component_name];
+    <div className={`reeda-plugin-slot flex items-center gap-2 ${className || ''}`} data-slot-id={slotId}>
+      {plugins.map(plugin => {
+        const WidgetComponent = PLUGIN_WIDGET_REGISTRY[plugin.ui_component_name];
         if (!WidgetComponent) return null;
 
         return (
           <div
-            key={patch.patch_id}
-            className="patch-module-container"
-            data-patch-id={patch.patch_id}
-            data-status={patch.status}
+            key={plugin.id}
+            className="reeda-plugin-container"
+            data-plugin-id={plugin.id}
+            data-status={plugin.status}
           >
             <WidgetComponent context={context} />
           </div>
@@ -50,3 +50,5 @@ export function PatchSlot({ slotId, context, className }: PatchSlotProps) {
     </div>
   );
 }
+
+export const PluginSlot = PatchSlot;

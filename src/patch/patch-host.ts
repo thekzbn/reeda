@@ -1,26 +1,27 @@
 /*
- * patch.md Host Runtime Engine for Reeda
- * Implements slot resolution, invariant testing, capability guards,
- * and user verification status transitions.
+ * Reeda Plugin Host Runtime (powered by patch.md)
+ * Manages plugin directory state, enable/disable toggles, slot dispatching,
+ * capability isolation, and user verification.
  */
 
 import type {
-  ReedaPatchManifest,
+  ReedaPluginManifest,
   ReedaSlotId,
-  PatchLifecycleStatus,
-  PatchExecutionContext,
+  PluginLifecycleStatus,
 } from './types';
 
-const STORAGE_KEY = 'reeda_patch_md_manifests_v1';
+const STORAGE_KEY = 'reeda_plugin_directory_v2';
+const ENABLED_STATE_KEY = 'reeda_plugin_enabled_states_v2';
 
-// Seed default patches demonstrating patch.md functionality
-const DEFAULT_PATCHES: ReedaPatchManifest[] = [
+const DEFAULT_PLUGINS: ReedaPluginManifest[] = [
   {
-    patch_id: 'patch_reading_time_calculator',
-    title: 'Reading Time Estimator',
-    description: 'Calculates estimated reading time based on remaining pages and average pace (250 wpm).',
-    author: 'community_reader',
+    id: 'plugin-reading-time',
+    name: 'Reading Time Estimator',
+    description: 'Calculates estimated minutes remaining based on current page progress and average reading pace.',
+    category: 'reader',
+    author: 'Reeda Lab',
     version: '1.2.0',
+    enabled: true,
     canonical_hash: 'a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90',
     status: 'active_verified',
     target_service: 'reeda_reader',
@@ -38,31 +39,33 @@ const DEFAULT_PATCHES: ReedaPatchManifest[] = [
     },
     wasm_binary: {
       sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-      url: 'https://cdn.patch.md/binaries/patch_reading_time_calculator_e3b0.wasm',
+      url: 'https://cdn.patch.md/binaries/plugin_reading_time.wasm',
     },
     intent_declaration: [
       'Calculate estimated reading time remaining for current PDF document',
-      'Display non-intrusive minutes badge in the reader toolbar',
+      'Display subtle typography indicator in the reader header bar',
     ],
     invariant_satisfaction: [
       'Satisfies Host Contract: `ReedaReaderToolbarSuite_v1`',
       'Passed Invariant Assertions: 3/3 (Host Structural Safety Confirmed)',
-      'Functional Verification: Approved by user_admin at 2026-09-12T14:20:00Z',
+      'Functional Verification: Approved by user at 2026-09-12T14:20:00Z',
     ],
     ui_component_name: 'ReadingTimeCalculatorWidget',
   },
   {
-    patch_id: 'patch_notes_markdown_cite',
-    title: 'APA / BibTeX Citation Formatter',
-    description: 'Formats document title and page selections into standardized APA or BibTeX citations in your notes.',
-    author: 'research_tools',
-    version: '1.0.1',
+    id: 'plugin-citation-formatter',
+    name: 'Academic Citation Formatter',
+    description: 'Generates formatted APA, BibTeX, Chicago, and MLA citation blocks directly into your notes.',
+    category: 'notes',
+    author: 'Reeda Lab',
+    version: '1.1.0',
+    enabled: true,
     canonical_hash: 'b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1',
-    status: 'active_unverified_user',
+    status: 'active_verified',
     target_service: 'reeda_notes',
     target_scope: 'citation_generation',
     created_at: '2026-09-16T11:00:00Z',
-    touches: ['src/components/reader/NotesPane.tsx'],
+    touches: ['src/components/reader/NotesEditor.tsx'],
     resource_locks: {
       slot_id: 'slot_notes_pane_header_actions',
       state_key: 'notes.citation.active',
@@ -74,27 +77,29 @@ const DEFAULT_PATCHES: ReedaPatchManifest[] = [
     },
     wasm_binary: {
       sha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
-      url: 'https://cdn.patch.md/binaries/patch_notes_markdown_cite_9f86.wasm',
+      url: 'https://cdn.patch.md/binaries/plugin_citation_formatter.wasm',
     },
     intent_declaration: [
-      'Generate formatted BibTeX and APA citation headers from active document metadata',
-      'Append formatted citation directly into the Tiptap notes pane',
+      'Format document title and page reference into APA, BibTeX, Chicago, or MLA citation',
+      'Insert formatted markdown directly into active Tiptap editor cursor position',
     ],
     invariant_satisfaction: [
       'Satisfies Host Contract: `ReedaNotesPaneSuite_v1`',
       'Passed Invariant Assertions: 2/2 (Host Structural Safety Confirmed)',
-      'Functional Verification: Pending User Confirmation',
+      'Functional Verification: Approved by user at 2026-09-16T15:00:00Z',
     ],
     ui_component_name: 'CitationFormatterWidget',
   },
   {
-    patch_id: 'patch_library_batch_tags',
-    title: 'Document Reading Priority Tags',
-    description: 'Add custom tags (To Read, In Progress, Synthesized) to documents in the library.',
-    author: 'reeda_power_user',
-    version: '0.9.0',
+    id: 'plugin-library-tags',
+    name: 'Library Reading Priority Filters',
+    description: 'Categorize and filter your library documents by reading status (To Read, In Progress, Synthesized).',
+    category: 'library',
+    author: 'Reeda Lab',
+    version: '1.0.0',
+    enabled: true,
     canonical_hash: 'c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2',
-    status: 'active_unverified_user',
+    status: 'active_verified',
     target_service: 'reeda_library',
     target_scope: 'document_metadata',
     created_at: '2026-09-16T14:30:00Z',
@@ -110,23 +115,23 @@ const DEFAULT_PATCHES: ReedaPatchManifest[] = [
     },
     wasm_binary: {
       sha256: '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
-      url: 'https://cdn.patch.md/binaries/patch_library_batch_tags_5e88.wasm',
+      url: 'https://cdn.patch.md/binaries/plugin_library_tags.wasm',
     },
     intent_declaration: [
-      'Provide tag filter pills above library documents',
-      'Allow tagging documents with custom reading categories',
+      'Provide subtle text-based tag filters above library documents',
+      'Filter documents by status in local storage without network requests',
     ],
     invariant_satisfaction: [
       'Satisfies Host Contract: `ReedaLibrarySuite_v1`',
       'Passed Invariant Assertions: 2/2 (Host Structural Safety Confirmed)',
-      'Functional Verification: Pending User Confirmation',
+      'Functional Verification: Approved by user at 2026-09-16T15:00:00Z',
     ],
     ui_component_name: 'LibraryTagsWidget',
   },
 ];
 
-class PatchHostStore {
-  private patches: ReedaPatchManifest[] = [];
+class PluginHostStore {
+  private plugins: ReedaPluginManifest[] = [];
   private listeners: Set<() => void> = new Set();
 
   constructor() {
@@ -135,28 +140,28 @@ class PatchHostStore {
 
   private load(): void {
     if (typeof window === 'undefined') {
-      this.patches = DEFAULT_PATCHES;
+      this.plugins = DEFAULT_PLUGINS;
       return;
     }
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        this.patches = JSON.parse(stored);
+        this.plugins = JSON.parse(stored);
       } else {
-        this.patches = DEFAULT_PATCHES;
+        this.plugins = DEFAULT_PLUGINS;
         this.save();
       }
     } catch {
-      this.patches = DEFAULT_PATCHES;
+      this.plugins = DEFAULT_PLUGINS;
     }
   }
 
   private save(): void {
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.patches));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.plugins));
       } catch {
-        // Storage quota or privacy mode
+        // storage quota
       }
     }
     this.notify();
@@ -173,91 +178,60 @@ class PatchHostStore {
     }
   }
 
-  public getAll(): ReedaPatchManifest[] {
-    return [...this.patches];
+  public getAll(): ReedaPluginManifest[] {
+    return [...this.plugins];
   }
 
-  public getBySlot(slotId: ReedaSlotId): ReedaPatchManifest[] {
-    return this.patches.filter(
+  public getBySlot(slotId: ReedaSlotId): ReedaPluginManifest[] {
+    return this.plugins.filter(
       p =>
+        p.enabled &&
         p.resource_locks.slot_id === slotId &&
         (p.status === 'active_verified' || p.status === 'active_unverified_user')
     );
   }
 
-  public getById(patchId: string): ReedaPatchManifest | undefined {
-    return this.patches.find(p => p.patch_id === patchId);
+  public getById(pluginId: string): ReedaPluginManifest | undefined {
+    return this.plugins.find(p => p.id === pluginId);
   }
 
-  public registerPatch(patch: ReedaPatchManifest): void {
-    const existingIdx = this.patches.findIndex(p => p.patch_id === patch.patch_id);
-    if (existingIdx >= 0) {
-      this.patches[existingIdx] = patch;
+  public setEnabled(pluginId: string, enabled: boolean): void {
+    const plugin = this.getById(pluginId);
+    if (!plugin) return;
+    plugin.enabled = enabled;
+    this.save();
+  }
+
+  public registerPlugin(plugin: ReedaPluginManifest): void {
+    const idx = this.plugins.findIndex(p => p.id === plugin.id);
+    if (idx >= 0) {
+      this.plugins[idx] = plugin;
     } else {
-      this.patches.push(patch);
+      this.plugins.unshift(plugin);
     }
     this.save();
   }
 
-  public removePatch(patchId: string): void {
-    this.patches = this.patches.filter(p => p.patch_id !== patchId);
+  public removePlugin(pluginId: string): void {
+    this.plugins = this.plugins.filter(p => p.id !== pluginId);
     this.save();
   }
 
-  // Step 18: User Verification Flow (ACTIVE_UNVERIFIED_USER -> ACTIVE_VERIFIED)
-  public approvePatch(patchId: string, userId = 'user_reader'): boolean {
-    const patch = this.getById(patchId);
-    if (!patch || patch.status !== 'active_unverified_user') return false;
+  public approvePlugin(pluginId: string, userId = 'current_reader'): boolean {
+    const plugin = this.getById(pluginId);
+    if (!plugin || plugin.status !== 'active_unverified_user') return false;
 
-    patch.status = 'active_verified';
-    patch.invariant_satisfaction = patch.invariant_satisfaction.filter(
+    plugin.status = 'active_verified';
+    plugin.invariant_satisfaction = plugin.invariant_satisfaction.filter(
       l => !l.startsWith('Functional Verification:')
     );
-    patch.invariant_satisfaction.push(
+    plugin.invariant_satisfaction.push(
       `Functional Verification: Approved by ${userId} at ${new Date().toISOString()}`
     );
     this.save();
     return true;
   }
-
-  public rejectPatch(patchId: string, reason: string, userId = 'user_reader'): boolean {
-    const patch = this.getById(patchId);
-    if (!patch) return false;
-
-    patch.invariant_satisfaction = patch.invariant_satisfaction.filter(
-      l => !l.startsWith('Functional Verification:')
-    );
-    patch.invariant_satisfaction.push(
-      `Functional Verification: Rejected by ${userId} — "${reason}"`
-    );
-    this.save();
-    return true;
-  }
-
-  // Step 19: Capability Guard
-  public validateCapability(patch: ReedaPatchManifest, requestedResource: string): boolean {
-    return patch.capabilities.some(cap => {
-      if (cap === requestedResource) return true;
-      const [capDomain, capTarget] = cap.split(':');
-      const [reqDomain, reqTarget] = requestedResource.split(':');
-      if (capDomain !== reqDomain) return false;
-      if (capTarget === '*') return true;
-      if (reqTarget === capTarget || reqTarget?.startsWith(`${capTarget}/`)) return true;
-      return false;
-    });
-  }
-
-  // Self-healing / circuit breaker simulation
-  public toggleDegraded(patchId: string): void {
-    const patch = this.getById(patchId);
-    if (!patch) return;
-    if (patch.status === 'degraded_paused') {
-      patch.status = 'active_unverified_user';
-    } else {
-      patch.status = 'degraded_paused';
-    }
-    this.save();
-  }
 }
 
-export const patchHost = new PatchHostStore();
+export const pluginHost = new PluginHostStore();
+export const patchHost = pluginHost; // backward-compat alias

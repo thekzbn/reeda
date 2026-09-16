@@ -1,12 +1,11 @@
 /*
- * patch.md integration for Reeda
- * Types and schema definitions for the patch.md runtime inside Reeda.
+ * Reeda Plugin System (powered by patch.md)
+ * Schema definitions for sandboxed extensions, slots, and lifecycle states.
  */
 
-export type PatchLifecycleStatus =
-  | 'draft'
-  | 'active_unverified_user'
+export type PluginLifecycleStatus =
   | 'active_verified'
+  | 'active_unverified_user'
   | 'stale_pending_verification'
   | 'recompiling_on_demand'
   | 'degraded_paused';
@@ -18,30 +17,26 @@ export type ReedaSlotId =
   | 'slot_annotation_quick_actions'
   | 'slot_settings_integrations';
 
-export interface PatchResourceLocks {
+export interface PluginResourceLocks {
   slot_id: ReedaSlotId;
   state_key: string;
 }
 
-export interface PatchCapability {
-  resource: string;
-  action: 'read' | 'write' | 'execute';
+export interface ReedaPluginManifest {
+  id: string;
+  name: string;
   description: string;
-}
-
-export interface ReedaPatchManifest {
-  patch_id: string;
-  title: string;
-  description: string;
+  category: 'reader' | 'notes' | 'library' | 'utility';
   author: string;
   version: string;
+  enabled: boolean;
   canonical_hash: string;
-  status: PatchLifecycleStatus;
+  status: PluginLifecycleStatus;
   target_service: 'reeda_reader' | 'reeda_notes' | 'reeda_library' | 'external_export';
   target_scope: string;
   created_at: string;
   touches: string[];
-  resource_locks: PatchResourceLocks;
+  resource_locks: PluginResourceLocks;
   capabilities: string[];
   semantic_contracts: {
     currency: string;
@@ -54,17 +49,18 @@ export interface ReedaPatchManifest {
   };
   intent_declaration: string[];
   invariant_satisfaction: string[];
-  // Executable UI/logic code representation for browser sandbox
   ui_component_name: string;
 }
 
-export interface PatchExecutionContext {
+export interface PluginExecutionContext {
   documentId?: string;
   documentTitle?: string;
   currentPage?: number;
   totalPages?: number;
   selectedText?: string;
   notesContent?: string;
+  activeTagFilter?: string | null;
+  onSelectTagFilter?: (tag: string | null) => void;
   onInsertNote?: (text: string) => void;
   onToast?: (message: string, type?: 'success' | 'info' | 'error') => void;
 }
