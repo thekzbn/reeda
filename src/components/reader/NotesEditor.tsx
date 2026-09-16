@@ -121,10 +121,14 @@ function Toolbar({
   const [isPublishReportEnabled, setIsPublishReportEnabled] = useState(() =>
     pluginHost.isPluginEnabled("plugin-publish-report")
   );
+  const [isCitationPluginEnabled, setIsCitationPluginEnabled] = useState(() =>
+    pluginHost.isPluginEnabled("plugin-citation-formatter")
+  );
 
   useEffect(() => {
     const unsub = pluginHost.subscribe(() => {
       setIsPublishReportEnabled(pluginHost.isPluginEnabled("plugin-publish-report"));
+      setIsCitationPluginEnabled(pluginHost.isPluginEnabled("plugin-citation-formatter"));
     });
     return unsub;
   }, []);
@@ -143,7 +147,7 @@ function Toolbar({
       exportNotesToPdf({
         markdown,
         sourceTitle: documentTitle,
-        includeSource,
+        includeSource: includeSource && isCitationPluginEnabled,
         fileName: documentTitle ? `${documentTitle} Notes` : "Notes",
       });
       toast.success("Notes exported as Stylized PDF.");
@@ -319,14 +323,18 @@ function Toolbar({
               </>
             )}
 
-            <DropdownMenuSeparator />
-            <DropdownMenuCheckboxItem
-              checked={includeSource}
-              onCheckedChange={handleToggleIncludeSource}
-              className="cursor-pointer text-xs"
-            >
-              <span>Include source line</span>
-            </DropdownMenuCheckboxItem>
+            {isCitationPluginEnabled && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuCheckboxItem
+                  checked={includeSource}
+                  onCheckedChange={handleToggleIncludeSource}
+                  className="cursor-pointer text-xs"
+                >
+                  <span>Include source line</span>
+                </DropdownMenuCheckboxItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
