@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Toaster as Sonner } from "sonner";
-import { Check, AlertCircle, Info, Loader2 } from "lucide-react";
+import { Info, Loader2 } from "lucide-react";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
@@ -45,8 +45,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
         },
       }}
       icons={{
-        success: <Check className="h-3.5 w-3.5 text-primary shrink-0 stroke-[2.2]" />,
-        error: <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0 stroke-[2.2]" />,
+        success: <Info className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 stroke-[2.2]" />,
+        error: <Info className="h-3.5 w-3.5 text-destructive dark:text-red-400 shrink-0 stroke-[2.2]" />,
+        warning: <Info className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0 stroke-[2.2]" />,
         info: <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0 stroke-[2]" />,
         loading: <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground shrink-0" />,
       }}
