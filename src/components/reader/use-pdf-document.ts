@@ -94,10 +94,12 @@ export function usePdfDocument(url: string | null): UsePdfDocumentResult {
               const page = await doc.getPage(i);
               const textContent = await page.getTextContent();
               let count = 0;
-              for (const item of textContent.items) {
-                if ("str" in item && typeof item.str === "string") {
-                  const words = item.str.trim().split(/\s+/).filter(Boolean);
-                  count += words.length;
+              if (textContent && Array.isArray(textContent.items)) {
+                for (const item of textContent.items) {
+                  if (item && typeof item === "object" && "str" in item && typeof item.str === "string") {
+                    const words = item.str.trim().split(/\s+/).filter(Boolean);
+                    count += words.length;
+                  }
                 }
               }
               countArray[i - 1] = count;
@@ -122,9 +124,12 @@ export function usePdfDocument(url: string | null): UsePdfDocumentResult {
             try {
               const page = await doc.getPage(i);
               const textContent = await page.getTextContent();
-              const fullText = textContent.items
-                .map((item) => ("str" in item ? item.str : ""))
-                .join(" ");
+              let fullText = "";
+              if (textContent && Array.isArray(textContent.items)) {
+                fullText = textContent.items
+                  .map((item) => (item && typeof item === "object" && "str" in item && typeof item.str === "string" ? item.str : ""))
+                  .join(" ");
+              }
 
               const matches = fullText.match(isbnRegex);
               if (matches && matches.length > 0) {

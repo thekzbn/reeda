@@ -68,7 +68,13 @@ export function usePdfSearch(
           try {
             const page = await pdfDoc.getPage(i);
             const textContent = await page.getTextContent();
-            pageText = textContent.items.map((item) => ("str" in item ? item.str : "")).join(" ");
+            if (textContent && Array.isArray(textContent.items)) {
+              pageText = textContent.items
+                .map((item) => (item && typeof item === "object" && "str" in item && typeof item.str === "string" ? item.str : ""))
+                .join(" ");
+            } else {
+              pageText = "";
+            }
             textCacheRef.current.set(i, pageText);
           } catch {
             pageText = "";
