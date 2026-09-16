@@ -36,6 +36,8 @@ import {
   Quote,
   Link as LinkIcon,
   Download,
+  FileCode,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,6 +52,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getMyProfile, updateMyProfile } from "@/lib/profile";
 import { toast } from "sonner";
 import { PatchSlot } from "@/patch/PatchSlot";
+import { pluginHost } from "@/patch/patch-host";
 import "./notes-editor.css";
 
 export interface NotesEditorHandle {
@@ -115,6 +118,17 @@ function Toolbar({
     },
   });
 
+  const [isPublishReportEnabled, setIsPublishReportEnabled] = useState(() =>
+    pluginHost.isPluginEnabled("plugin-publish-report")
+  );
+
+  useEffect(() => {
+    const unsub = pluginHost.subscribe(() => {
+      setIsPublishReportEnabled(pluginHost.isPluginEnabled("plugin-publish-report"));
+    });
+    return unsub;
+  }, []);
+
   const includeSource = profileQuery.data?.export_include_source ?? true;
 
   const handleToggleIncludeSource = (checked: boolean) => {
@@ -132,9 +146,39 @@ function Toolbar({
         includeSource,
         fileName: documentTitle ? `${documentTitle} Notes` : "Notes",
       });
-      toast.success("Notes exported as PDF.");
+      toast.success("Notes exported as Stylized PDF.");
     } catch {
       toast.error("Could not export notes.");
+    }
+  };
+
+  const handleExportHtml = async () => {
+    try {
+      const storage = editor.storage["markdown"] as { getMarkdown: () => string } | undefined;
+      const markdown = storage ? storage.getMarkdown() : editor.getText();
+      const { exportNotesToHtml } = await import("@/lib/notes-exporter");
+      exportNotesToHtml({
+        markdown,
+        sourceTitle: documentTitle,
+      });
+      toast.success("Notes exported as Formatted HTML.");
+    } catch {
+      toast.error("Could not export notes as HTML.");
+    }
+  };
+
+  const handleExportMarkdown = async () => {
+    try {
+      const storage = editor.storage["markdown"] as { getMarkdown: () => string } | undefined;
+      const markdown = storage ? storage.getMarkdown() : editor.getText();
+      const { exportNotesToMarkdown } = await import("@/lib/notes-exporter");
+      exportNotesToMarkdown({
+        markdown,
+        sourceTitle: documentTitle,
+      });
+      toast.success("Notes exported as Plain Markdown.");
+    } catch {
+      toast.error("Could not export notes as Markdown.");
     }
   };
 
@@ -257,10 +301,24 @@ function Toolbar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem onClick={handleExport} className="cursor-pointer text-xs">
-              <Download className="h-3.5 w-3.5 mr-2" />
-              <span>Export as PDF</span>
+            <DropdownMenuItem onClick={handleExport} className="cursor-pointer text-xs font-medium">
+              <Download className="h-3.5 w-3.5 mr-2 text-primary" />
+              <span>Export as Stylized PDF</span>
             </DropdownMenuItem>
+
+            {isPublishReportEnabled && (
+              <>
+                <DropdownMenuItem onClick={handleExportHtml} className="cursor-pointer text-xs">
+                  <FileCode className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                  <span>Export as Formatted HTML</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportMarkdown} className="cursor-pointer text-xs">
+                  <FileText className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                  <span>Export as Plain Markdown</span>
+                </DropdownMenuItem>
+              </>
+            )}
+
             <DropdownMenuSeparator />
             <DropdownMenuCheckboxItem
               checked={includeSource}

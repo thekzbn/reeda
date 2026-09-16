@@ -294,62 +294,33 @@ export function PublishAndReportWidget({ context }: { context?: PluginExecutionC
   };
 
   return (
-    <div className="flex items-center gap-1">
-      {/* Templates Menu */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="squircle h-8 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-            title="Insert Note Template"
-          >
-            <span>Templates</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={() => handleInsertTemplate('cornell')} className="cursor-pointer text-xs">
-            Cornell Note-taking
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleInsertTemplate('exec')} className="cursor-pointer text-xs">
-            Executive Summary
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleInsertTemplate('lit')} className="cursor-pointer text-xs">
-            Literature Review
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleInsertTemplate('qa')} className="cursor-pointer text-xs">
-            Q&A Log
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {/* Publish / Multi-Format Export Menu */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="squircle h-8 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
-            title="Publish & Export Notes"
-          >
-            <span>Publish</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onClick={() => handleExportFormat('html')} className="cursor-pointer text-xs">
-            Formatted HTML (.html)
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleExportFormat('markdown')} className="cursor-pointer text-xs">
-            Plain Markdown (.md)
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleExportFormat('pdf')} className="cursor-pointer text-xs">
-            Styled PDF Document
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="squircle h-8 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+          title="Insert Note Template"
+        >
+          <span>Templates</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem onClick={() => handleInsertTemplate('cornell')} className="cursor-pointer text-xs">
+          Cornell Note-taking
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleInsertTemplate('exec')} className="cursor-pointer text-xs">
+          Executive Summary
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleInsertTemplate('lit')} className="cursor-pointer text-xs">
+          Literature Review
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleInsertTemplate('qa')} className="cursor-pointer text-xs">
+          Q&A Log
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
