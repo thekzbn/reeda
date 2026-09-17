@@ -808,7 +808,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
     };
   }, [pdfDoc, totalPages, pageWordCounts, saveReadingPosition]);
 
-  // Keyboard navigation & search shortcut
+  // Keyboard navigation & search & annotation shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't intercept if user is typing in an input or the notes editor
@@ -820,7 +820,10 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
         return;
       }
 
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+      const isModifierActive = e.ctrlKey || e.metaKey || e.altKey;
+      const key = e.key.toLowerCase();
+
+      if ((e.ctrlKey || e.metaKey) && key === "f") {
         e.preventDefault();
         setIsSearchOpen(true);
       } else if (e.key === "Escape") {
@@ -832,6 +835,25 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
         } else if (selection) {
           setSelection(null);
           window.getSelection()?.removeAllRanges();
+        } else if (menuAnnotation) {
+          setMenuAnnotation(null);
+        }
+      } else if (e.key === "Delete" || e.key === "Backspace") {
+        if (menuAnnotation) {
+          e.preventDefault();
+          void removeAnnotation(menuAnnotation);
+        }
+      } else if (!isModifierActive && (selection || selectionRef.current)) {
+        const targetSelection = selection || selectionRef.current;
+        if (key === "h") {
+          e.preventDefault();
+          void createAnnotation("highlight", targetSelection);
+        } else if (key === "u") {
+          e.preventDefault();
+          void createAnnotation("underline", targetSelection);
+        } else if (key === "s") {
+          e.preventDefault();
+          void createAnnotation("strikethrough", targetSelection);
         }
       } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
         e.preventDefault();
@@ -844,7 +866,15 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isSearchOpen, isTocOpen, currentPage, handleNavigateToPage, selection]);
+  }, [
+    isSearchOpen,
+    isTocOpen,
+    currentPage,
+    handleNavigateToPage,
+    selection,
+    menuAnnotation,
+    isSavingAnnotation,
+  ]);
 
   // Zoom handlers
   const handleZoomIn = () => {
@@ -1085,6 +1115,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
               >
                 <Highlighter className="h-4 w-4 text-amber-500" />
                 <span>Highlight text</span>
+                <ContextMenuShortcut>H</ContextMenuShortcut>
               </ContextMenuItem>
               <ContextMenuItem
                 onClick={() => void createAnnotation("underline", activeMenuSelection)}
@@ -1093,6 +1124,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
               >
                 <UnderlineIcon className="h-4 w-4 text-blue-500" />
                 <span>Underline text</span>
+                <ContextMenuShortcut>U</ContextMenuShortcut>
               </ContextMenuItem>
               <ContextMenuItem
                 onClick={() => void createAnnotation("strikethrough", activeMenuSelection)}
@@ -1101,6 +1133,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
               >
                 <StrikeIcon className="h-4 w-4 text-rose-500" />
                 <span>Strikethrough text</span>
+                <ContextMenuShortcut>S</ContextMenuShortcut>
               </ContextMenuItem>
               <ContextMenuSeparator />
               <ContextMenuItem
@@ -1156,6 +1189,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
               >
                 <Trash2 className="h-4 w-4" />
                 <span>Remove annotation</span>
+                <ContextMenuShortcut>Del</ContextMenuShortcut>
               </ContextMenuItem>
             </>
           ) : (
@@ -1389,7 +1423,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
               size="sm"
               variant="ghost"
               className="h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium hover:bg-amber-500/15 hover:text-amber-600 dark:hover:text-amber-400"
-              title="Highlight text"
+              title="Highlight text (H)"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => void createAnnotation("highlight")}
               disabled={isSavingAnnotation}
@@ -1401,7 +1435,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
               size="sm"
               variant="ghost"
               className="h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium hover:bg-blue-500/15 hover:text-blue-600 dark:hover:text-blue-400"
-              title="Underline text"
+              title="Underline text (U)"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => void createAnnotation("underline")}
               disabled={isSavingAnnotation}
@@ -1413,7 +1447,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
               size="sm"
               variant="ghost"
               className="h-7 gap-1.5 rounded-full px-2.5 text-xs font-medium hover:bg-rose-500/15 hover:text-rose-600 dark:hover:text-rose-400"
-              title="Strikethrough text"
+              title="Strikethrough text (S)"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => void createAnnotation("strikethrough")}
               disabled={isSavingAnnotation}
