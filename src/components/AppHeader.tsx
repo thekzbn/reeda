@@ -48,7 +48,11 @@ export function AppHeader({ email }: { email?: string | null | undefined }) {
         <div className="flex items-center gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="squircle text-muted-foreground hover:text-foreground">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="squircle text-muted-foreground hover:text-foreground"
+              >
                 {email ?? "Account"}
               </Button>
             </DropdownMenuTrigger>
@@ -74,4 +78,3 @@ export function AppHeader({ email }: { email?: string | null | undefined }) {
     </header>
   );
 }
-

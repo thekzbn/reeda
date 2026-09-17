@@ -17,13 +17,7 @@
  */
 
 import { Link } from "@tanstack/react-router";
-import {
-  Search,
-  Maximize2,
-  Minimize2,
-  BookOpen,
-  ArrowLeft,
-} from "lucide-react";
+import { Search, Maximize2, Minimize2, BookOpen, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { WorkspaceMode } from "./types";
 import { cn } from "@/lib/utils";
@@ -32,15 +26,23 @@ import { PatchSlot } from "@/patch/PatchSlot";
 
 interface ReaderHeaderProps {
   title: string;
-  documentId?: string;
-  currentPage?: number;
-  totalPages?: number;
-  pageWordCounts?: number[];
-  remainingWords?: number;
-  isPdfVisible?: boolean;
-  detectedIsbn?: string | null;
-  copyrightYear?: string | null;
-  extractedMetadata?: { title?: string; author?: string; year?: string; publisher?: string } | null;
+  documentId?: string | undefined;
+  currentPage?: number | undefined;
+  totalPages?: number | undefined;
+  pageWordCounts?: number[] | undefined;
+  remainingWords?: number | undefined;
+  isPdfVisible?: boolean | undefined;
+  detectedIsbn?: string | null | undefined;
+  copyrightYear?: string | null | undefined;
+  extractedMetadata?:
+    | {
+        title?: string | undefined;
+        author?: string | undefined;
+        year?: string | undefined;
+        publisher?: string | undefined;
+      }
+    | null
+    | undefined;
   isFullscreen: boolean;
   hasOutline: boolean;
   isTocOpen: boolean;

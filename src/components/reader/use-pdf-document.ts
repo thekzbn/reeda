@@ -22,10 +22,10 @@ import { pdfjsLib, PDFJS_VERSION, WORKER_SRC } from "./pdf-worker";
 import type { OutlineItem, PageDimension } from "./types";
 
 export interface ExtractedMetadata {
-  title?: string;
-  author?: string;
-  year?: string;
-  publisher?: string;
+  title?: string | undefined;
+  author?: string | undefined;
+  year?: string | undefined;
+  publisher?: string | undefined;
 }
 
 interface UsePdfDocumentResult {
@@ -99,7 +99,12 @@ export function usePdfDocument(url: string | null): UsePdfDocumentResult {
               let count = 0;
               if (textContent && Array.isArray(textContent.items)) {
                 for (const item of textContent.items) {
-                  if (item && typeof item === "object" && "str" in item && typeof item.str === "string") {
+                  if (
+                    item &&
+                    typeof item === "object" &&
+                    "str" in item &&
+                    typeof item.str === "string"
+                  ) {
                     const words = item.str.trim().split(/\s+/).filter(Boolean);
                     count += words.length;
                   }
@@ -124,7 +129,8 @@ export function usePdfDocument(url: string | null): UsePdfDocumentResult {
 
           // Regex patterns for explicit ISBNs and Copyright years
           const isbnExplicitRegex = /(?:ISBN(?:-10|-13)?:?\s*)([0-9X\-\s]{10,17})/gi;
-          const isbnStandaloneRegex = /\b(97[89][-\s]?\d{1,5}[-\s]?\d{1,7}[-\s]?\d{1,7}[-\s]?[\dX]|\d{1,5}[-\s]?\d{1,7}[-\s]?\d{1,7}[-\s]?[\dX])\b/gi;
+          const isbnStandaloneRegex =
+            /\b(97[89][-\s]?\d{1,5}[-\s]?\d{1,7}[-\s]?\d{1,7}[-\s]?[\dX]|\d{1,5}[-\s]?\d{1,7}[-\s]?\d{1,7}[-\s]?[\dX])\b/gi;
           const copyrightRegex = /(?:©|\(C\)|Copyright(?:\s+©)?|copr\.|published)\s*(\d{4})/gi;
 
           for (let i = 1; i <= maxScan; i++) {
@@ -135,7 +141,14 @@ export function usePdfDocument(url: string | null): UsePdfDocumentResult {
               let fullText = "";
               if (textContent && Array.isArray(textContent.items)) {
                 fullText = textContent.items
-                  .map((item) => (item && typeof item === "object" && "str" in item && typeof item.str === "string" ? item.str : ""))
+                  .map((item) =>
+                    item &&
+                    typeof item === "object" &&
+                    "str" in item &&
+                    typeof item.str === "string"
+                      ? item.str
+                      : "",
+                  )
                   .join(" ");
               }
 
@@ -282,7 +295,15 @@ async function fetchMetadataForIsbn(isbn: string): Promise<ExtractedMetadata | n
       `https://openlibrary.org/api/books?bibkeys=ISBN:${cleanIsbn}&format=json&jscmd=data`,
     );
     if (openLibRes.ok) {
-      const json = (await openLibRes.json()) as Record<string, { title?: string; authors?: Array<{ name: string }>; publish_date?: string; publishers?: Array<{ name: string }> }>;
+      const json = (await openLibRes.json()) as Record<
+        string,
+        {
+          title?: string;
+          authors?: Array<{ name: string }>;
+          publish_date?: string;
+          publishers?: Array<{ name: string }>;
+        }
+      >;
       const bookData = json[`ISBN:${cleanIsbn}`];
       if (bookData && bookData.title) {
         return {
@@ -303,7 +324,16 @@ async function fetchMetadataForIsbn(isbn: string): Promise<ExtractedMetadata | n
       `https://www.googleapis.com/books/v1/volumes?q=isbn:${cleanIsbn}`,
     );
     if (googleRes.ok) {
-      const json = (await googleRes.json()) as { items?: Array<{ volumeInfo?: { title?: string; authors?: string[]; publishedDate?: string; publisher?: string } }> };
+      const json = (await googleRes.json()) as {
+        items?: Array<{
+          volumeInfo?: {
+            title?: string;
+            authors?: string[];
+            publishedDate?: string;
+            publisher?: string;
+          };
+        }>;
+      };
       const item = json.items?.[0]?.volumeInfo;
       if (item && item.title) {
         return {

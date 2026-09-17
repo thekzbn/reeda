@@ -119,7 +119,8 @@ class Layout {
       this.doc.setFont("courier", bold ? "bold" : run.italic ? "italic" : "normal");
       this.doc.setFontSize(size - 0.5);
     } else {
-      const style = bold && run.italic ? "bolditalic" : bold ? "bold" : run.italic ? "italic" : "normal";
+      const style =
+        bold && run.italic ? "bolditalic" : bold ? "bold" : run.italic ? "italic" : "normal";
       this.doc.setFont("helvetica", style);
       this.doc.setFontSize(size);
     }

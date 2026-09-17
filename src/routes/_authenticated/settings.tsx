@@ -82,6 +82,7 @@ function SettingsPage() {
 
   const [displayNameInput, setDisplayNameInput] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [removePageSpacing, setRemovePageSpacingState] = useState(() => getRemovePageSpacing());
 
   const profile = profileQuery.data;
 
@@ -115,7 +116,7 @@ function SettingsPage() {
   };
 
   const [pluginsSystemEnabled, setPluginsSystemEnabled] = useState(() =>
-    pluginHost.isSystemEnabled()
+    pluginHost.isSystemEnabled(),
   );
 
   const handleResumeReadingChange = (checked: boolean) => {
@@ -130,7 +131,8 @@ function SettingsPage() {
 
   const handleRemovePageSpacingChange = (checked: boolean) => {
     setRemovePageSpacing(checked);
-    updateMutation.mutate({ remove_page_spacing: checked });
+    setRemovePageSpacingState(checked);
+    toast.success("Page spacing preference saved.");
   };
 
   const handleExportSourceChange = (checked: boolean) => {
@@ -176,7 +178,6 @@ function SettingsPage() {
 
   const currentTheme = profile?.theme ?? "system";
   const resumeReading = profile?.resume_reading ?? true;
-  const removePageSpacing = profile?.remove_page_spacing ?? getRemovePageSpacing();
   const exportIncludeSource = profile?.export_include_source ?? true;
   const hasNameChanged = displayNameInput.trim() !== (profile?.display_name ?? "");
 
@@ -301,7 +302,8 @@ function SettingsPage() {
             <div>
               <h2 className="text-sm font-medium text-foreground">Enable plugins</h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                Allow plugins and extensions to enhance your reading, note-taking, and library features.
+                Allow plugins and extensions to enhance your reading, note-taking, and library
+                features.
               </p>
             </div>
             <Switch
@@ -314,9 +316,12 @@ function SettingsPage() {
           {/* Export Source Line */}
           <div className="flex items-center justify-between gap-4 py-6">
             <div>
-              <h2 className="text-sm font-medium text-foreground">Include source in note exports</h2>
+              <h2 className="text-sm font-medium text-foreground">
+                Include source in note exports
+              </h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                Add a restrained source line at the bottom of exported PDFs referencing the original document.
+                Add a restrained source line at the bottom of exported PDFs referencing the original
+                document.
               </p>
             </div>
             <Switch

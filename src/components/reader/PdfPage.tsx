@@ -263,7 +263,7 @@ export const PdfPage = memo(function PdfPage({
       data-page-number={pageNumber}
       className={cn(
         "pdf-page-container mx-auto transition-transform duration-75",
-        removePageSpacing ? "my-0 border-b border-border/40" : "my-4"
+        removePageSpacing ? "my-0 border-b border-border/40" : "my-4",
       )}
       style={
         {

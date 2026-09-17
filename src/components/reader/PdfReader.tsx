@@ -66,7 +66,11 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getMyProfile, getRemovePageSpacing } from "@/lib/profile";
 import { cn } from "@/lib/utils";
-import { createDocumentAnnotations, deleteDocumentAnnotation, getDocumentAnnotations } from "@/lib/annotations";
+import {
+  createDocumentAnnotations,
+  deleteDocumentAnnotation,
+  getDocumentAnnotations,
+} from "@/lib/annotations";
 import type {
   AnnotationGeometry,
   AnnotationRect,
@@ -150,10 +154,7 @@ function annotationAtPoint(
         annotation.pageNumber === pageNumber &&
         annotation.geometry.rects.some(
           (rect) =>
-            nx >= rect.x &&
-            nx <= rect.x + rect.width &&
-            ny >= rect.y &&
-            ny <= rect.y + rect.height,
+            nx >= rect.x && nx <= rect.x + rect.width && ny >= rect.y && ny <= rect.y + rect.height,
         ),
     );
     if (hits.length > 0) return hits.at(-1) ?? null;
@@ -261,13 +262,19 @@ function selectionFromRange(root: HTMLElement, range: Range): PdfSelection | nul
 
   // Fallback: if no page rect was mapped, map from the start element container
   if (byPage.size === 0 && startEl) {
-    const pageEl = startEl.closest<HTMLElement>(".pdf-page-container[data-page-number]") ||
+    const pageEl =
+      startEl.closest<HTMLElement>(".pdf-page-container[data-page-number]") ||
       endEl?.closest<HTMLElement>(".pdf-page-container[data-page-number]");
     if (pageEl) {
       const pageNumber = Number(pageEl.dataset["pageNumber"]);
       const pageRect = pageEl.getBoundingClientRect();
       const startRect = startEl.getBoundingClientRect();
-      if (startRect.width > 0 && startRect.height > 0 && pageRect.width > 0 && pageRect.height > 0) {
+      if (
+        startRect.width > 0 &&
+        startRect.height > 0 &&
+        pageRect.width > 0 &&
+        pageRect.height > 0
+      ) {
         byPage.set(pageNumber, [
           {
             x: Math.max(0, Math.min(1, (startRect.left - pageRect.left) / pageRect.width)),
@@ -290,8 +297,11 @@ function selectionFromRange(root: HTMLElement, range: Range): PdfSelection | nul
   if (drafts.length === 0) return null;
 
   const rangeBounds = range.getBoundingClientRect();
-  let topY = rangeBounds.top > 0 ? rangeBounds.top : (selectionRects[0]?.top ?? 120);
-  let bottomY = rangeBounds.bottom > 0 ? rangeBounds.bottom : (selectionRects[selectionRects.length - 1]?.bottom ?? topY + 24);
+  const topY = rangeBounds.top > 0 ? rangeBounds.top : (selectionRects[0]?.top ?? 120);
+  const bottomY =
+    rangeBounds.bottom > 0
+      ? rangeBounds.bottom
+      : (selectionRects[selectionRects.length - 1]?.bottom ?? topY + 24);
   let centerX = rangeBounds.left + rangeBounds.width / 2;
   if (!Number.isFinite(centerX) || centerX <= 0) {
     centerX = selectionRects[0]?.left ? selectionRects[0].left + selectionRects[0].width / 2 : 400;
@@ -665,7 +675,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
       el.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleSelection);
     };
-  }, [pdfDoc]);
+  }, [pdfDoc, selection]);
 
   // Central Viewport Focal-Point Tracker (35% focal line) & Word Density Estimator
   useEffect(() => {
@@ -680,7 +690,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
       if (!container) return;
 
       const pageElements = Array.from(
-        container.querySelectorAll<HTMLElement>(".pdf-page-container[data-page-number]")
+        container.querySelectorAll<HTMLElement>(".pdf-page-container[data-page-number]"),
       );
       if (pageElements.length === 0) return;
 
@@ -948,7 +958,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
 
   const activeMenuSelection = menuSnapshot || selection || selectionRef.current;
 
-  const removePageSpacing = profileQuery.data?.remove_page_spacing ?? getRemovePageSpacing();
+  const removePageSpacing = getRemovePageSpacing();
 
   const pdfPane = (
     <div className={cn("relative h-full w-full overflow-hidden", !isPdfVisible && "hidden")}>
@@ -970,7 +980,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
             ref={scrollContainerRef}
             className={cn(
               "relative h-full overflow-y-auto overflow-x-auto bg-muted/40",
-              removePageSpacing ? "p-0 sm:py-2" : "p-4 sm:p-6"
+              removePageSpacing ? "p-0 sm:py-2" : "p-4 sm:p-6",
             )}
           >
             <div className="mx-auto flex flex-col items-center">
@@ -982,17 +992,16 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
                   scale={scale}
                   searchQuery={searchQuery}
                   activeMatch={activeMatch}
-                  annotations={annotations.filter((annotation) => annotation.pageNumber === pageNum)}
+                  annotations={annotations.filter(
+                    (annotation) => annotation.pageNumber === pageNum,
+                  )}
                   removePageSpacing={removePageSpacing}
                 />
               ))}
             </div>
           </main>
         </ContextMenuTrigger>
-        <ContextMenuContent
-          className="w-56"
-          onCloseAutoFocus={(event) => event.preventDefault()}
-        >
+        <ContextMenuContent className="w-56" onCloseAutoFocus={(event) => event.preventDefault()}>
           {activeMenuSelection ? (
             <>
               <ContextMenuItem
@@ -1094,7 +1103,10 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
                 <span>Fit to page</span>
               </ContextMenuItem>
               <ContextMenuSeparator />
-              <ContextMenuItem onClick={() => setIsSearchOpen(true)} className="gap-2 cursor-pointer">
+              <ContextMenuItem
+                onClick={() => setIsSearchOpen(true)}
+                className="gap-2 cursor-pointer"
+              >
                 <Search className="h-4 w-4" />
                 <span>Find in document</span>
                 <ContextMenuShortcut>Ctrl+F</ContextMenuShortcut>

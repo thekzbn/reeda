@@ -4,7 +4,7 @@
  * capability whitelists, and allows triggering on-demand user verification.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Sparkles,
   CheckCircle2,
@@ -16,20 +16,20 @@ import {
   Plus,
   Lock,
   ExternalLink,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
-import { patchHost } from './patch-host';
-import type { ReedaPatchManifest, PatchLifecycleStatus } from './types';
-import { PatchIntakeDialog } from './PatchIntakeDialog';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { patchHost } from "./patch-host";
+import type { ReedaPatchManifest, PatchLifecycleStatus } from "./types";
+import { PatchIntakeDialog } from "./PatchIntakeDialog";
 
 interface PatchManagerSheetProps {
   open: boolean;
@@ -50,47 +50,47 @@ export function PatchManagerSheet({ open, onOpenChange }: PatchManagerSheetProps
   const handleApprove = (patchId: string) => {
     const ok = patchHost.approvePatch(patchId);
     if (ok) {
-      toast.success('Patch marked as functionally verified (ACTIVE_VERIFIED)');
+      toast.success("Patch marked as functionally verified (ACTIVE_VERIFIED)");
     }
   };
 
   const handleReject = (patchId: string) => {
-    const reason = window.prompt('Why is this patch functionally incorrect?');
+    const reason = window.prompt("Why is this patch functionally incorrect?");
     if (reason) {
       patchHost.rejectPatch(patchId, reason);
-      toast.info('User rejection feedback recorded on patch manifest');
+      toast.info("User rejection feedback recorded on patch manifest");
     }
   };
 
   const handleToggleDegraded = (patchId: string) => {
     patchHost.toggleDegraded(patchId);
-    toast.info('Circuit breaker state updated');
+    toast.info("Circuit breaker state updated");
   };
 
   const getStatusBadge = (status: PatchLifecycleStatus) => {
     switch (status) {
-      case 'active_verified':
+      case "active_verified":
         return (
           <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
             <CheckCircle2 className="mr-1 h-3 w-3" />
             Active Verified
           </Badge>
         );
-      case 'active_unverified_user':
+      case "active_unverified_user":
         return (
           <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30">
             <Clock className="mr-1 h-3 w-3" />
             Active Unverified User
           </Badge>
         );
-      case 'degraded_paused':
+      case "degraded_paused":
         return (
           <Badge variant="destructive">
             <AlertTriangle className="mr-1 h-3 w-3" />
             Degraded (Paused)
           </Badge>
         );
-      case 'stale_pending_verification':
+      case "stale_pending_verification":
         return (
           <Badge variant="secondary">
             <RefreshCw className="mr-1 h-3 w-3" />
@@ -112,17 +112,14 @@ export function PatchManagerSheet({ open, onOpenChange }: PatchManagerSheetProps
                 <Sparkles className="h-5 w-5 text-primary" />
                 <DialogTitle className="text-xl font-semibold">patch.md Extensions</DialogTitle>
               </div>
-              <Button
-                size="sm"
-                className="squircle gap-1.5"
-                onClick={() => setIntakeOpen(true)}
-              >
+              <Button size="sm" className="squircle gap-1.5" onClick={() => setIntakeOpen(true)}>
                 <Plus className="h-3.5 w-3.5" />
                 Create Patch
               </Button>
             </div>
             <DialogDescription className="text-sm text-muted-foreground mt-1">
-              Intent-driven, WebAssembly-sandboxed feature extensions for Reeda. Managed via abstract slot locks and capability guards.
+              Intent-driven, WebAssembly-sandboxed feature extensions for Reeda. Managed via
+              abstract slot locks and capability guards.
             </DialogDescription>
           </DialogHeader>
 
@@ -140,7 +137,7 @@ export function PatchManagerSheet({ open, onOpenChange }: PatchManagerSheetProps
                 </Button>
               </div>
             ) : (
-              patches.map(patch => (
+              patches.map((patch) => (
                 <div
                   key={patch.patch_id}
                   className="rounded-xl border border-border bg-card/50 p-4 transition-colors hover:bg-card"
@@ -173,19 +170,30 @@ export function PatchManagerSheet({ open, onOpenChange }: PatchManagerSheetProps
                   <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg p-2.5">
                     <div className="flex items-center gap-1.5">
                       <Lock className="h-3 w-3 text-primary/70" />
-                      <span>Slot: <code className="font-mono text-[11px] text-foreground">{patch.resource_locks.slot_id}</code></span>
+                      <span>
+                        Slot:{" "}
+                        <code className="font-mono text-[11px] text-foreground">
+                          {patch.resource_locks.slot_id}
+                        </code>
+                      </span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Shield className="h-3 w-3 text-primary/70" />
-                      <span>Caps: <code className="font-mono text-[11px] text-foreground">{patch.capabilities.join(', ')}</code></span>
+                      <span>
+                        Caps:{" "}
+                        <code className="font-mono text-[11px] text-foreground">
+                          {patch.capabilities.join(", ")}
+                        </code>
+                      </span>
                     </div>
                   </div>
 
                   {/* Step 18: Verification Banner */}
-                  {patch.status === 'active_unverified_user' && (
+                  {patch.status === "active_unverified_user" && (
                     <div className="mt-3 flex items-center justify-between gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 p-2.5 text-xs text-amber-700 dark:text-amber-300">
                       <div>
-                        <span className="font-medium">Host structural tests passed.</span> Waiting for your functional validation.
+                        <span className="font-medium">Host structural tests passed.</span> Waiting
+                        for your functional validation.
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <Button

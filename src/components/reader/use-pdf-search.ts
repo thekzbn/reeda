@@ -70,7 +70,11 @@ export function usePdfSearch(
             const textContent = await page.getTextContent();
             if (textContent && Array.isArray(textContent.items)) {
               pageText = textContent.items
-                .map((item) => (item && typeof item === "object" && "str" in item && typeof item.str === "string" ? item.str : ""))
+                .map((item) =>
+                  item && typeof item === "object" && "str" in item && typeof item.str === "string"
+                    ? item.str
+                    : "",
+                )
                 .join(" ");
             } else {
               pageText = "";

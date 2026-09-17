@@ -27,7 +27,7 @@ export interface NotesExportOptions {
 }
 
 function sanitizeFileName(name: string): string {
-  return name.replace(/[^a-z0-9_\-\.\s]/gi, "_").trim() || "Notes";
+  return name.replace(/[^a-z0-9_.\s-]/gi, "_").trim() || "Notes";
 }
 
 function downloadFile(content: string, filename: string, mimeType: string): void {
@@ -48,11 +48,13 @@ function downloadFile(content: string, filename: string, mimeType: string): void
 export function exportNotesToHtml(options: NotesExportOptions): void {
   const { markdown, sourceTitle, author, totalPages, readingDate } = options;
   const title = sourceTitle || "Document Notes";
-  const date = readingDate || new Date().toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const date =
+    readingDate ||
+    new Date().toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   const authorStr = author ? author : "Unknown Author";
   const pagesStr = totalPages ? `${totalPages} pages` : "";
 

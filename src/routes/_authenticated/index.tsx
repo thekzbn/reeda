@@ -34,11 +34,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AppHeader } from "@/components/AppHeader";
 import { PatchSlot } from "@/patch/PatchSlot";
-import {
-  pluginHost,
-  getDocumentPriorityTag,
-  setDocumentPriorityTag,
-} from "@/patch/patch-host";
+import { pluginHost, getDocumentPriorityTag, setDocumentPriorityTag } from "@/patch/patch-host";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -85,7 +81,7 @@ function Library() {
   const [renameValue, setRenameValue] = useState("");
   const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
   const [priorityPluginEnabled, setPriorityPluginEnabled] = useState(() =>
-    pluginHost.isPluginEnabled("plugin-library-tags")
+    pluginHost.isPluginEnabled("plugin-library-tags"),
   );
   const [, setTagVersion] = useState(0);
 
@@ -353,7 +349,11 @@ function Library() {
                     </Link>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="squircle text-muted-foreground">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="squircle text-muted-foreground"
+                        >
                           More
                         </Button>
                       </DropdownMenuTrigger>

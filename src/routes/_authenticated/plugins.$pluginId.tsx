@@ -40,10 +40,7 @@ import type { ReedaPluginManifest } from "@/patch/types";
 
 export const Route = createFileRoute("/_authenticated/plugins/$pluginId")({
   head: () => ({
-    meta: [
-      { name: "robots", content: "noindex, nofollow" },
-      { title: "Plugin Details | Reeda" },
-    ],
+    meta: [{ name: "robots", content: "noindex, nofollow" }, { title: "Plugin Details | Reeda" }],
   }),
   component: PluginDetailPage,
 });
@@ -52,7 +49,7 @@ function PluginDetailPage() {
   const { pluginId } = Route.useParams();
   const navigate = useNavigate();
   const [plugin, setPlugin] = useState<ReedaPluginManifest | undefined>(() =>
-    pluginHost.getById(pluginId)
+    pluginHost.getById(pluginId),
   );
 
   const profileQuery = useQuery({

@@ -82,7 +82,6 @@ function writeLocal(documentId: string, list: DocumentAnnotation[]): void {
 export async function getDocumentAnnotations(documentId: string): Promise<DocumentAnnotation[]> {
   const localAnnotations: DocumentAnnotation[] = readLocal(documentId);
 
-
   if (isTestDocument(documentId)) {
     return localAnnotations;
   }
@@ -146,7 +145,9 @@ export async function createDocumentAnnotations(
             geometry: input.geometry as unknown as Json,
           })),
         )
-        .select("id, document_id, page_number, annotation_type, selected_text, geometry, created_at");
+        .select(
+          "id, document_id, page_number, annotation_type, selected_text, geometry, created_at",
+        );
 
       if (!error && data) {
         const saved = (data as unknown as AnnotationRow[]).map(toAnnotation);
@@ -174,7 +175,6 @@ export async function deleteDocumentAnnotation(
     documentId,
     readLocal(documentId).filter((a) => a.id !== annotationId),
   );
-
 
   if (isTestDocument(documentId)) {
     return;

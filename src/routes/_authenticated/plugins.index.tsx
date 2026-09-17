@@ -99,9 +99,7 @@ function PluginsIndexPage() {
                 className="group flex cursor-pointer items-center justify-between gap-6 px-5 py-4 transition-colors hover:bg-muted/30"
               >
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-sm font-medium text-foreground">
-                    {plugin.name}
-                  </h2>
+                  <h2 className="text-sm font-medium text-foreground">{plugin.name}</h2>
                   <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
                     {plugin.description}
                   </p>

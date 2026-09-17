@@ -29,8 +29,7 @@ export const Route = createFileRoute("/sitemap.xml")({
         const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${PAGES.map(
-  (path) =>
-    `  <url>\n    <loc>${SITE}${path}</loc>\n    <lastmod>${today}</lastmod>\n  </url>`,
+  (path) => `  <url>\n    <loc>${SITE}${path}</loc>\n    <lastmod>${today}</lastmod>\n  </url>`,
 ).join("\n")}
 </urlset>
 `;

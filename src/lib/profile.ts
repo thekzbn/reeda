@@ -53,7 +53,6 @@ export interface Profile {
   theme: ThemeMode;
   resume_reading: boolean;
   export_include_source: boolean;
-  remove_page_spacing?: boolean;
 }
 
 export async function getMyProfile(): Promise<Profile | null> {
@@ -109,10 +108,7 @@ export async function updateMyProfile(
   const user = userData.user;
   if (!user) throw new Error("Your session has expired. Please sign in again.");
 
-  const { error } = await supabase
-    .from("profiles")
-    .update(updates)
-    .eq("id", user.id);
+  const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
 
   if (error) throw new Error("We could not save your changes. Please try again.");
 }
@@ -123,10 +119,7 @@ export async function deleteMyAccount(): Promise<void> {
   if (!user) throw new Error("Your session has expired. Please sign in again.");
 
   // 1. Fetch all user documents to remove underlying storage files and records
-  const { data: userDocs } = await supabase
-    .from("documents")
-    .select("*")
-    .eq("user_id", user.id);
+  const { data: userDocs } = await supabase.from("documents").select("*").eq("user_id", user.id);
 
   if (userDocs && userDocs.length > 0) {
     const { getStorageProvider } = await import("@/lib/storage");

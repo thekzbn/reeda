@@ -20,13 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 
 export type SourceType =
-  | "journal_article"
-  | "book"
-  | "website"
-  | "report"
-  | "video"
-  | "pdf"
-  | "other";
+  "journal_article" | "book" | "website" | "report" | "video" | "pdf" | "other";
 
 export const SOURCE_TYPE_LABELS: Record<SourceType, string> = {
   journal_article: "Journal article",
@@ -90,8 +84,7 @@ function normalise(raw: Partial<CitationData> | null | undefined): CitationData 
       first_name: String(a?.first_name ?? ""),
       last_name: String(a?.last_name ?? ""),
     })),
-    publication_year:
-      typeof value.publication_year === "number" ? value.publication_year : null,
+    publication_year: typeof value.publication_year === "number" ? value.publication_year : null,
     publisher_or_journal: value.publisher_or_journal ?? "",
     doi_or_url: value.doi_or_url ?? "",
     volume: value.volume ?? "",
@@ -149,7 +142,8 @@ function writeLocal(documentId: string, store: LocalStore): void {
 
 async function requireUserId(): Promise<string> {
   const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) throw new CitationError("Your session has expired. Please sign in again.");
+  if (error || !data.user)
+    throw new CitationError("Your session has expired. Please sign in again.");
   return data.user.id;
 }
 
@@ -158,7 +152,12 @@ export async function getDocumentCitation(documentId: string): Promise<CitationE
   if (isTestDocument(documentId)) {
     const stored = readLocal(documentId).document;
     if (!stored) return null;
-    return { ...normalise(stored), id: "local-document", citation_key: stored.citation_key, origin: "document" };
+    return {
+      ...normalise(stored),
+      id: "local-document",
+      citation_key: stored.citation_key,
+      origin: "document",
+    };
   }
 
   const { data, error } = await supabase

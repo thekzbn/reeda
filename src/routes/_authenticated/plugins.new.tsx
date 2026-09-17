@@ -70,8 +70,8 @@ function AddPluginPage() {
         category: targetSlot.includes("reader")
           ? "reader"
           : targetSlot.includes("notes")
-          ? "notes"
-          : "library",
+            ? "notes"
+            : "library",
         author: "You",
         version: "1.0.0",
         enabled: true,
@@ -80,8 +80,8 @@ function AddPluginPage() {
         target_service: targetSlot.includes("reader")
           ? "reeda_reader"
           : targetSlot.includes("notes")
-          ? "reeda_notes"
-          : "reeda_library",
+            ? "reeda_notes"
+            : "reeda_library",
         target_scope: "custom_extension",
         created_at: new Date().toISOString(),
         touches: ["src/components/reader/ReaderHeader.tsx"],
@@ -143,9 +143,7 @@ function AddPluginPage() {
               <label htmlFor="plugin-desc" className="text-sm font-medium text-foreground block">
                 Description
               </label>
-              <p className="mt-1 text-xs text-muted-foreground">
-                What should this plugin do?
-              </p>
+              <p className="mt-1 text-xs text-muted-foreground">What should this plugin do?</p>
               <Textarea
                 id="plugin-desc"
                 placeholder="e.g. Highlight vocabulary words, count reading streak days, or export notes..."
@@ -157,7 +155,10 @@ function AddPluginPage() {
             </div>
 
             <div className="py-6">
-              <label htmlFor="plugin-location" className="text-sm font-medium text-foreground block">
+              <label
+                htmlFor="plugin-location"
+                className="text-sm font-medium text-foreground block"
+              >
                 Location
               </label>
               <p className="mt-1 text-xs text-muted-foreground">

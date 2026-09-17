@@ -119,10 +119,10 @@ function Toolbar({
   });
 
   const [isPublishReportEnabled, setIsPublishReportEnabled] = useState(() =>
-    pluginHost.isPluginEnabled("plugin-publish-report")
+    pluginHost.isPluginEnabled("plugin-publish-report"),
   );
   const [isCitationPluginEnabled, setIsCitationPluginEnabled] = useState(() =>
-    pluginHost.isPluginEnabled("plugin-citation-formatter")
+    pluginHost.isPluginEnabled("plugin-citation-formatter"),
   );
 
   useEffect(() => {
@@ -277,15 +277,16 @@ function Toolbar({
             documentId,
             documentTitle,
             getNotesMarkdown: () => {
-              const storage = editor.storage["markdown"] as { getMarkdown: () => string } | undefined;
+              const storage = editor.storage["markdown"] as
+                { getMarkdown: () => string } | undefined;
               return storage ? storage.getMarkdown() : editor.getText();
             },
             onInsertNote: (text: string) => {
               editor.chain().focus().insertContent(text).run();
             },
-            onToast: (msg: string, type?: 'success' | 'info' | 'error') => {
-              if (type === 'success') toast.success(msg);
-              else if (type === 'error') toast.error(msg);
+            onToast: (msg: string, type?: "success" | "info" | "error") => {
+              if (type === "success") toast.success(msg);
+              else if (type === "error") toast.error(msg);
               else toast.info(msg);
             },
           }}

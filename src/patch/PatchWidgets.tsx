@@ -3,15 +3,15 @@
  * Clean, typographic, distraction-free widgets designed to follow Reeda's essentialist philosophy.
  */
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import type { PluginExecutionContext } from './types';
+} from "@/components/ui/dropdown-menu";
+import type { PluginExecutionContext } from "./types";
 
 /**
  * 1. Reading Time Estimator Widget
@@ -26,44 +26,61 @@ export interface CitationMetadata {
 }
 
 export function parseOceanOfPdfTitle(rawTitle: string): CitationMetadata {
-  let clean = rawTitle.replace(/\.pdf$/i, '').trim();
+  let clean = rawTitle.replace(/\.pdf$/i, "").trim();
 
   // Strip leading OceanofPDF prefixes
   const oceanRegex = /^(?:https?:\/\/)?(?:www\.)?oceanofpdf(?:\.com)?_?/i;
-  clean = clean.replace(oceanRegex, '');
+  clean = clean.replace(oceanRegex, "");
 
   let title = clean;
-  let author = '';
+  let author = "";
 
-  if (clean.includes('_-_')) {
-    const parts = clean.split('_-_');
+  if (clean.includes("_-_")) {
+    const parts = clean.split("_-_");
     title = parts[0] || clean;
-    author = parts[1] || '';
-  } else if (clean.includes(' - ')) {
-    const parts = clean.split(' - ');
+    author = parts[1] || "";
+  } else if (clean.includes(" - ")) {
+    const parts = clean.split(" - ");
     title = parts[0] || clean;
-    author = parts[1] || '';
+    author = parts[1] || "";
   }
 
   // Replace underscores with spaces
-  title = title.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
-  author = author.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+  title = title.replace(/_/g, " ").replace(/\s+/g, " ").trim();
+  author = author.replace(/_/g, " ").replace(/\s+/g, " ").trim();
 
   // Title Case capitalization
   const capitalizeWords = (str: string) =>
     str
       .toLowerCase()
-      .split(' ')
+      .split(" ")
       .map((word, idx) => {
-        const lower = ['a', 'an', 'the', 'and', 'but', 'or', 'for', 'nor', 'on', 'at', 'to', 'from', 'by', 'of', 'in', 'with'];
+        const lower = [
+          "a",
+          "an",
+          "the",
+          "and",
+          "but",
+          "or",
+          "for",
+          "nor",
+          "on",
+          "at",
+          "to",
+          "from",
+          "by",
+          "of",
+          "in",
+          "with",
+        ];
         if (idx > 0 && lower.includes(word)) return word;
         return word.charAt(0).toUpperCase() + word.slice(1);
       })
-      .join(' ');
+      .join(" ");
 
   return {
-    title: capitalizeWords(title) || 'Untitled Document',
-    author: author ? capitalizeWords(author) : 'Author, A.',
+    title: capitalizeWords(title) || "Untitled Document",
+    author: author ? capitalizeWords(author) : "Author, A.",
   };
 }
 
@@ -72,7 +89,11 @@ export function parseOceanOfPdfTitle(rawTitle: string): CitationMetadata {
  * Slot: slot_reader_toolbar_actions
  * Shows a quiet, non-distracting reading pace calculation in the reader header (hidden when Notes mode active).
  */
-export function ReadingTimeCalculatorWidget({ context }: { context?: PluginExecutionContext }) {
+export function ReadingTimeCalculatorWidget({
+  context,
+}: {
+  context?: PluginExecutionContext | undefined;
+}) {
   const isPdfVisible = context?.isPdfVisible ?? true;
   const totalPages = context?.totalPages ?? 1;
   const currentPage = context?.currentPage ?? 1;
@@ -84,7 +105,7 @@ export function ReadingTimeCalculatorWidget({ context }: { context?: PluginExecu
   if (!isPdfVisible || totalPages <= 1) return null;
 
   let totalMinutesRemaining: number;
-  if (typeof remainingWords === 'number' && remainingWords >= 0) {
+  if (typeof remainingWords === "number" && remainingWords >= 0) {
     totalMinutesRemaining = remainingWords === 0 ? 0 : Math.max(1, Math.ceil(remainingWords / 250));
   } else if (pageWordCounts && pageWordCounts.length > 0) {
     const wordsLeft = pageWordCounts.slice(currentPage - 1).reduce((a, b) => a + b, 0);
@@ -92,7 +113,8 @@ export function ReadingTimeCalculatorWidget({ context }: { context?: PluginExecu
   } else {
     // Fallback: standard 250 words/min based on 300 words per page
     const wordsPerPage = 300;
-    totalMinutesRemaining = remainingPages === 0 ? 0 : Math.max(1, Math.ceil((remainingPages * wordsPerPage) / 250));
+    totalMinutesRemaining =
+      remainingPages === 0 ? 0 : Math.max(1, Math.ceil((remainingPages * wordsPerPage) / 250));
   }
 
   return (
@@ -100,7 +122,9 @@ export function ReadingTimeCalculatorWidget({ context }: { context?: PluginExecu
       className="hidden text-xs text-muted-foreground/80 lg:inline select-none"
       title={`Estimated reading time based on word density (${remainingPages} pages remaining)`}
     >
-      {remainingPages === 0 || totalMinutesRemaining === 0 ? 'Completed' : `~${totalMinutesRemaining} min left`}
+      {remainingPages === 0 || totalMinutesRemaining === 0
+        ? "Completed"
+        : `~${totalMinutesRemaining} min left`}
     </span>
   );
 }
@@ -110,8 +134,12 @@ export function ReadingTimeCalculatorWidget({ context }: { context?: PluginExecu
  * Slot: slot_notes_pane_header_actions
  * Formats standardized citations (APA, BibTeX, Chicago, MLA) with ISBN API lookup and OceanofPDF title/author parsing backup.
  */
-export function CitationFormatterWidget({ context }: { context?: PluginExecutionContext }) {
-  const rawTitle = context?.documentTitle?.trim() || 'Untitled Document';
+export function CitationFormatterWidget({
+  context,
+}: {
+  context?: PluginExecutionContext | undefined;
+}) {
+  const rawTitle = context?.documentTitle?.trim() || "Untitled Document";
   const page = context?.currentPage || 1;
   const currentYear = new Date().getFullYear();
 
@@ -123,25 +151,30 @@ export function CitationFormatterWidget({ context }: { context?: PluginExecution
   const finalTitle = apiMeta?.title?.trim() || oceanMeta.title;
   const finalAuthor = apiMeta?.author?.trim() || oceanMeta.author;
   const finalYear = apiMeta?.year?.trim() || context?.copyrightYear || String(currentYear);
-  const finalPublisher = apiMeta?.publisher?.trim() || '';
+  const finalPublisher = apiMeta?.publisher?.trim() || "";
 
-  const handleInsert = (format: 'apa' | 'bibtex' | 'chicago' | 'mla') => {
-    let citationText = '';
-    const pubSuffix = finalPublisher ? ` ${finalPublisher}.` : '';
-    const pubBib = finalPublisher ? `\n  publisher = {${finalPublisher}},` : '';
+  const handleInsert = (format: "apa" | "bibtex" | "chicago" | "mla") => {
+    let citationText = "";
+    const pubSuffix = finalPublisher ? ` ${finalPublisher}.` : "";
+    const pubBib = finalPublisher ? `\n  publisher = {${finalPublisher}},` : "";
 
     switch (format) {
-      case 'apa':
+      case "apa":
         citationText = `\n\n> **Citation (APA):** ${finalAuthor} (${finalYear}). *${finalTitle}* (p. ${page}).${pubSuffix}\n`;
         break;
-      case 'bibtex':
-        const citeKey = finalTitle.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12) + finalYear;
+      case "bibtex": {
+        const citeKey =
+          finalTitle
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "")
+            .slice(0, 12) + finalYear;
         citationText = `\n\n\`\`\`bibtex\n@misc{${citeKey},\n  title = {${finalTitle}},\n  author = {${finalAuthor}},\n  year = {${finalYear}},${pubBib}\n  note = {Page ${page}}\n}\n\`\`\`\n`;
         break;
-      case 'chicago':
+      }
+      case "chicago":
         citationText = `\n\n> **Citation (Chicago):** ${finalAuthor}, *${finalTitle}* (${finalYear}), p. ${page}.\n`;
         break;
-      case 'mla':
+      case "mla":
         citationText = `\n\n> **Citation (MLA):** ${finalAuthor}. *${finalTitle}*, ${finalYear}, p. ${page}.\n`;
         break;
     }
@@ -149,8 +182,11 @@ export function CitationFormatterWidget({ context }: { context?: PluginExecution
     if (context?.onInsertNote) {
       context.onInsertNote(citationText);
       const isIsbnSource = !!apiMeta?.title;
-      const sourceLabel = isIsbnSource ? 'ISBN lookup' : 'OceanofPDF title parser';
-      context.onToast?.(`Inserted ${format.toUpperCase()} citation into notes (${sourceLabel})`, 'success');
+      const sourceLabel = isIsbnSource ? "ISBN lookup" : "OceanofPDF title parser";
+      context.onToast?.(
+        `Inserted ${format.toUpperCase()} citation into notes (${sourceLabel})`,
+        "success",
+      );
     }
   };
 
@@ -168,16 +204,19 @@ export function CitationFormatterWidget({ context }: { context?: PluginExecution
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-36">
-        <DropdownMenuItem onClick={() => handleInsert('apa')} className="cursor-pointer text-xs">
+        <DropdownMenuItem onClick={() => handleInsert("apa")} className="cursor-pointer text-xs">
           APA Format
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleInsert('bibtex')} className="cursor-pointer text-xs">
+        <DropdownMenuItem onClick={() => handleInsert("bibtex")} className="cursor-pointer text-xs">
           BibTeX Block
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleInsert('chicago')} className="cursor-pointer text-xs">
+        <DropdownMenuItem
+          onClick={() => handleInsert("chicago")}
+          className="cursor-pointer text-xs"
+        >
           Chicago Style
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleInsert('mla')} className="cursor-pointer text-xs">
+        <DropdownMenuItem onClick={() => handleInsert("mla")} className="cursor-pointer text-xs">
           MLA Format
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -190,12 +229,12 @@ export function CitationFormatterWidget({ context }: { context?: PluginExecution
  * Slot: slot_library_header_actions
  * Clean typographic filter pills matching Reeda's minimalist design.
  */
-export function LibraryTagsWidget({ context }: { context?: PluginExecutionContext }) {
+export function LibraryTagsWidget({ context }: { context?: PluginExecutionContext | undefined }) {
   const [selectedTag, setSelectedTag] = useState<string | null>(context?.activeTagFilter ?? null);
-  const tags = ['All', 'To Read', 'In Progress', 'Synthesized'];
+  const tags = ["All", "To Read", "In Progress", "Synthesized"];
 
   const handleSelect = (tag: string) => {
-    const next = tag === 'All' ? null : tag;
+    const next = tag === "All" ? null : tag;
     setSelectedTag(next);
     if (context?.onSelectTagFilter) {
       context.onSelectTagFilter(next);
@@ -204,8 +243,8 @@ export function LibraryTagsWidget({ context }: { context?: PluginExecutionContex
 
   return (
     <div className="flex items-center gap-1 overflow-x-auto py-1 text-xs">
-      {tags.map(tag => {
-        const isActive = (tag === 'All' && selectedTag === null) || selectedTag === tag;
+      {tags.map((tag) => {
+        const isActive = (tag === "All" && selectedTag === null) || selectedTag === tag;
         return (
           <button
             key={tag}
@@ -213,8 +252,8 @@ export function LibraryTagsWidget({ context }: { context?: PluginExecutionContex
             onClick={() => handleSelect(tag)}
             className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
               isActive
-                ? 'bg-secondary font-medium text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
+                ? "bg-secondary font-medium text-foreground"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {tag}
@@ -230,16 +269,24 @@ export function LibraryTagsWidget({ context }: { context?: PluginExecutionContex
  * Slot: slot_notes_pane_header_actions
  * Inserts structured templates (Cornell, Executive Summary, Lit Review, Q&A) and exports notes to HTML, Markdown, or PDF.
  */
-export function PublishAndReportWidget({ context }: { context?: PluginExecutionContext }) {
-  const docTitle = context?.documentTitle?.trim() || 'Untitled Document';
-  const author = context?.extractedMetadata?.author || 'Author';
+export function PublishAndReportWidget({
+  context,
+}: {
+  context?: PluginExecutionContext | undefined;
+}) {
+  const docTitle = context?.documentTitle?.trim() || "Untitled Document";
+  const author = context?.extractedMetadata?.author || "Author";
   const totalPages = context?.totalPages;
-  const todayStr = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  const todayStr = new Date().toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
-  const handleInsertTemplate = (type: 'cornell' | 'exec' | 'lit' | 'qa') => {
-    let templateText = '';
+  const handleInsertTemplate = (type: "cornell" | "exec" | "lit" | "qa") => {
+    let templateText = "";
     switch (type) {
-      case 'cornell':
+      case "cornell":
         templateText = `\n\n# CORNELL NOTES
 **Source:** ${docTitle}  
 **Date:** ${todayStr}
@@ -271,27 +318,32 @@ export function PublishAndReportWidget({ context }: { context?: PluginExecutionC
 
 `;
         break;
-      case 'exec':
+      case "exec":
         templateText = `\n\n# Executive Summary\n**Document:** ${docTitle}  \n**Date:** ${todayStr}  \n\n## Core Thesis\nInsert the primary argument or goal of this reading.\n\n## Key Findings\n1. First major insight...\n2. Second major insight...\n3. Third major insight...\n\n## Action Items\n- [ ] Follow up on reference...\n- [ ] Synthesize findings into report...\n\n`;
         break;
-      case 'lit':
+      case "lit":
         templateText = `\n\n# Literature Review\n**Title:** ${docTitle}  \n**Author:** ${author}  \n**Review Date:** ${todayStr}  \n\n## 1. Research Question & Purpose\n\n## 2. Methodology & Evidence\n\n## 3. Key Arguments & Findings\n\n## 4. Critical Assessment & Gaps\n- Strengths:\n- Limitations:\n\n## 5. Relevance & Connections\n\n`;
         break;
-      case 'qa':
+      case "qa":
         templateText = `\n\n# Q&A Log: ${docTitle}\n*Reading Date: ${todayStr}*\n\n### Q1: What is the main thesis of this section?\n**A:** \n\n### Q2: What evidence supports this claim?\n**A:** \n\n### Q3: How does this apply to our study?\n**A:** \n\n`;
         break;
     }
 
     if (context?.onInsertNote) {
       context.onInsertNote(templateText);
-      context.onToast?.(`Inserted ${type === 'exec' ? 'Executive Summary' : type === 'lit' ? 'Literature Review' : type === 'qa' ? 'Q&A Log' : 'Cornell Notes'} template`, 'success');
+      context.onToast?.(
+        `Inserted ${type === "exec" ? "Executive Summary" : type === "lit" ? "Literature Review" : type === "qa" ? "Q&A Log" : "Cornell Notes"} template`,
+        "success",
+      );
     }
   };
 
-  const handleExportFormat = async (format: 'html' | 'markdown' | 'pdf') => {
-    const markdown = context?.getNotesMarkdown ? context.getNotesMarkdown() : context?.notesContent || '';
-    if (format === 'html') {
-      const { exportNotesToHtml } = await import('@/lib/notes-exporter');
+  const handleExportFormat = async (format: "html" | "markdown" | "pdf") => {
+    const markdown = context?.getNotesMarkdown
+      ? context.getNotesMarkdown()
+      : context?.notesContent || "";
+    if (format === "html") {
+      const { exportNotesToHtml } = await import("@/lib/notes-exporter");
       exportNotesToHtml({
         markdown,
         sourceTitle: docTitle,
@@ -299,9 +351,9 @@ export function PublishAndReportWidget({ context }: { context?: PluginExecutionC
         totalPages,
         readingDate: todayStr,
       });
-      context?.onToast?.('Notes exported as formatted HTML', 'success');
-    } else if (format === 'markdown') {
-      const { exportNotesToMarkdown } = await import('@/lib/notes-exporter');
+      context?.onToast?.("Notes exported as formatted HTML", "success");
+    } else if (format === "markdown") {
+      const { exportNotesToMarkdown } = await import("@/lib/notes-exporter");
       exportNotesToMarkdown({
         markdown,
         sourceTitle: docTitle,
@@ -309,16 +361,16 @@ export function PublishAndReportWidget({ context }: { context?: PluginExecutionC
         totalPages,
         readingDate: todayStr,
       });
-      context?.onToast?.('Notes exported as Markdown file', 'success');
-    } else if (format === 'pdf') {
-      const { exportNotesToPdf } = await import('@/lib/notes-pdf');
+      context?.onToast?.("Notes exported as Markdown file", "success");
+    } else if (format === "pdf") {
+      const { exportNotesToPdf } = await import("@/lib/notes-pdf");
       exportNotesToPdf({
         markdown,
         sourceTitle: docTitle,
         includeSource: true,
         fileName: `${docTitle} Notes`,
       });
-      context?.onToast?.('Notes exported as PDF', 'success');
+      context?.onToast?.("Notes exported as PDF", "success");
     }
   };
 
@@ -336,16 +388,28 @@ export function PublishAndReportWidget({ context }: { context?: PluginExecutionC
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem onClick={() => handleInsertTemplate('cornell')} className="cursor-pointer text-xs">
+        <DropdownMenuItem
+          onClick={() => handleInsertTemplate("cornell")}
+          className="cursor-pointer text-xs"
+        >
           Cornell Note-taking
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleInsertTemplate('exec')} className="cursor-pointer text-xs">
+        <DropdownMenuItem
+          onClick={() => handleInsertTemplate("exec")}
+          className="cursor-pointer text-xs"
+        >
           Executive Summary
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleInsertTemplate('lit')} className="cursor-pointer text-xs">
+        <DropdownMenuItem
+          onClick={() => handleInsertTemplate("lit")}
+          className="cursor-pointer text-xs"
+        >
           Literature Review
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleInsertTemplate('qa')} className="cursor-pointer text-xs">
+        <DropdownMenuItem
+          onClick={() => handleInsertTemplate("qa")}
+          className="cursor-pointer text-xs"
+        >
           Q&A Log
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -355,7 +419,7 @@ export function PublishAndReportWidget({ context }: { context?: PluginExecutionC
 
 export const PLUGIN_WIDGET_REGISTRY: Record<
   string,
-  React.ComponentType<{ context?: PluginExecutionContext }>
+  React.ComponentType<{ context?: PluginExecutionContext | undefined }>
 > = {
   ReadingTimeCalculatorWidget,
   CitationFormatterWidget,
