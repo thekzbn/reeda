@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import "./map-upsert-polyfill";
 import * as pdfjsLib from "pdfjs-dist";
 
 const PDFJS_VERSION = pdfjsLib.version || "6.3.289";
