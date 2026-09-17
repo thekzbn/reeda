@@ -81,6 +81,7 @@ import { toast } from "sonner";
 
 interface SelectionDraft {
   pageNumber: number;
+  selectedText?: string | undefined;
   geometry: AnnotationGeometry;
 }
 
@@ -225,6 +226,30 @@ function getRangeClientRects(range: Range, root: HTMLElement): DOMRect[] {
   return spans.map((s) => s.getBoundingClientRect()).filter((r) => r.width > 0 && r.height > 0);
 }
 
+function getPageSelectedText(pageElement: HTMLElement, range: Range): string {
+  const spans = Array.from(pageElement.querySelectorAll(".textLayer span"));
+  const intersectingSpans: string[] = [];
+  for (const span of spans) {
+    if (range.intersectsNode(span)) {
+      const spanText = span.textContent ?? "";
+      const hasStart = range.startContainer === span || span.contains(range.startContainer);
+      const hasEnd = range.endContainer === span || span.contains(range.endContainer);
+      let textChunk = spanText;
+      if (hasStart && hasEnd) {
+        textChunk = spanText.slice(range.startOffset, range.endOffset);
+      } else if (hasStart) {
+        textChunk = spanText.slice(range.startOffset);
+      } else if (hasEnd) {
+        textChunk = spanText.slice(0, range.endOffset);
+      }
+      if (textChunk.trim()) {
+        intersectingSpans.push(textChunk);
+      }
+    }
+  }
+  return intersectingSpans.join(" ").replace(/\s+/g, " ").trim();
+}
+
 function selectionFromRange(root: HTMLElement, range: Range): PdfSelection | null {
   const text = (range.toString() || window.getSelection()?.toString() || "")
     .replace(/\s+/g, " ")
@@ -291,10 +316,15 @@ function selectionFromRange(root: HTMLElement, range: Range): PdfSelection | nul
   }
 
   const drafts = [...byPage.entries()]
-    .map(([pageNumber, rects]) => ({
-      pageNumber,
-      geometry: { version: 1 as const, rects: mergeLineRects(rects) },
-    }))
+    .map(([pageNumber, rects]) => {
+      const pageEl = pageElements.find((el) => Number(el.dataset["pageNumber"]) === pageNumber);
+      const pageText = pageEl ? getPageSelectedText(pageEl, range) : "";
+      return {
+        pageNumber,
+        selectedText: pageText || text,
+        geometry: { version: 1 as const, rects: mergeLineRects(rects) },
+      };
+    })
     .filter((draft) => draft.geometry.rects.length > 0);
 
   if (drafts.length === 0) return null;
@@ -923,7 +953,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
         source.drafts.map((draft) => ({
           pageNumber: draft.pageNumber,
           type,
-          selectedText: source.text,
+          selectedText: draft.selectedText || source.text,
           geometry: draft.geometry,
         })),
       );
