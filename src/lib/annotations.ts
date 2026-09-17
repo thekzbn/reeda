@@ -158,18 +158,16 @@ export async function syncPendingAnnotations(documentId: string): Promise<void> 
     }
 
     if (pendingCreations.length > 0) {
-      const { error: insError } = await supabase
-        .from("document_annotations")
-        .insert(
-          pendingCreations.map((input) => ({
-            document_id: documentId,
-            user_id: userId,
-            page_number: input.pageNumber,
-            annotation_type: input.type,
-            selected_text: input.selectedText,
-            geometry: input.geometry as unknown as Json,
-          })),
-        );
+      const { error: insError } = await supabase.from("document_annotations").insert(
+        pendingCreations.map((input) => ({
+          document_id: documentId,
+          user_id: userId,
+          page_number: input.pageNumber,
+          annotation_type: input.type,
+          selected_text: input.selectedText,
+          geometry: input.geometry as unknown as Json,
+        })),
+      );
 
       if (!insError) {
         writePendingCreations(documentId, []);
