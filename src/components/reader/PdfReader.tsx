@@ -735,7 +735,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
       el.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleSelection);
     };
-  }, [pdfDoc, selection]);
+  }, [pdfDoc, isLoading, selection]);
 
   // Central Viewport Focal-Point Tracker (35% focal line) & Word Density Estimator
   useEffect(() => {
@@ -812,7 +812,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
     return () => {
       el.removeEventListener("scroll", handleScrollAndPosition);
     };
-  }, [pdfDoc, totalPages, pageWordCounts, saveReadingPosition]);
+  }, [pdfDoc, isLoading, totalPages, pageWordCounts, saveReadingPosition]);
 
   // Keyboard navigation & search & annotation shortcuts
   useEffect(() => {
