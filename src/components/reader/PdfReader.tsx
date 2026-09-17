@@ -941,12 +941,27 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
     }, 50);
   };
 
+  const getAnnotationText = (annotation: DocumentAnnotation) => {
+    const groupId = annotation.geometry.groupId;
+    if (groupId) {
+      const groupItems = annotationsRef.current
+        .filter((a) => a.geometry.groupId === groupId)
+        .sort((a, b) => a.pageNumber - b.pageNumber);
+      if (groupItems.length > 1) {
+        return groupItems.map((a) => a.selectedText).join(" ");
+      }
+    }
+    return annotation.selectedText;
+  };
+
   const createAnnotation = async (
     type: AnnotationType,
     source: PdfSelection | null = activeSelection,
   ) => {
     if (!source || isSavingAnnotation) return;
     setIsSavingAnnotation(true);
+    const isMultiPage = source.drafts.length > 1;
+    const groupId = isMultiPage ? crypto.randomUUID() : undefined;
     try {
       const created = await createDocumentAnnotations(
         documentId,
@@ -954,7 +969,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
           pageNumber: draft.pageNumber,
           type,
           selectedText: draft.selectedText || source.text,
-          geometry: draft.geometry,
+          geometry: groupId ? { ...draft.geometry, groupId } : draft.geometry,
         })),
       );
       setAnnotations((current) => [...current, ...created]);
@@ -976,8 +991,13 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
 
   const removeAnnotation = async (annotation: DocumentAnnotation) => {
     try {
-      await deleteDocumentAnnotation(documentId, annotation.id);
-      setAnnotations((current) => current.filter((item) => item.id !== annotation.id));
+      const deletedIds = await deleteDocumentAnnotation(
+        documentId,
+        annotation.id,
+        annotation.geometry.groupId,
+      );
+      const deletedSet = new Set(deletedIds);
+      setAnnotations((current) => current.filter((item) => !deletedSet.has(item.id)));
       setMenuAnnotation(null);
       toast.success("Annotation removed");
     } catch (error) {
@@ -986,13 +1006,13 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
   };
 
   const sendAnnotationToNotes = (annotation: DocumentAnnotation) => {
-    if (!annotation.selectedText) return;
+    const text = getAnnotationText(annotation);
+    if (!text) return;
     if (!isDesktop) {
       setWorkspaceMode("notes");
     } else if (workspaceMode === "pdf") {
       setWorkspaceMode("split");
     }
-    const text = annotation.selectedText;
     window.setTimeout(() => {
       notesRef.current?.insertText(text);
       toast.success("Added to notes");
@@ -1107,7 +1127,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
               <ContextMenuItem
                 onClick={() =>
                   void copySelection({
-                    text: menuAnnotation.selectedText,
+                    text: getAnnotationText(menuAnnotation),
                     x: 0,
                     y: 0,
                     drafts: [],

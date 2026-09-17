@@ -168,14 +168,28 @@ export async function createDocumentAnnotations(
 export async function deleteDocumentAnnotation(
   documentId: string,
   annotationId: string,
-): Promise<void> {
+  groupId?: string | undefined,
+): Promise<string[]> {
+  const local = readLocal(documentId);
+  const targetAnnotation = local.find((a) => a.id === annotationId);
+  const effectiveGroupId = groupId || targetAnnotation?.geometry?.groupId;
+
+  const targetIds = local
+    .filter(
+      (a) =>
+        a.id === annotationId ||
+        (effectiveGroupId !== undefined && a.geometry?.groupId === effectiveGroupId),
+    )
+    .map((a) => a.id);
+
+  const deletedSet = new Set(targetIds.length > 0 ? targetIds : [annotationId]);
   writeLocal(
     documentId,
-    readLocal(documentId).filter((a) => a.id !== annotationId),
+    local.filter((a) => !deletedSet.has(a.id)),
   );
 
   if (isTestDocument(documentId)) {
-    return;
+    return Array.from(deletedSet);
   }
 
   try {
@@ -185,11 +199,13 @@ export async function deleteDocumentAnnotation(
       await supabase
         .from("document_annotations")
         .delete()
-        .eq("id", annotationId)
+        .in("id", Array.from(deletedSet))
         .eq("document_id", documentId)
         .eq("user_id", userId);
     }
   } catch {
     // ignore
   }
+
+  return Array.from(deletedSet);
 }

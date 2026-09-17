@@ -66,6 +66,7 @@ export interface AnnotationRect {
 export interface AnnotationGeometry {
   version: 1;
   rects: AnnotationRect[];
+  groupId?: string | undefined;
 }
 
 export interface DocumentAnnotation {
