@@ -154,7 +154,10 @@ function annotationAtPoint(
         annotation.pageNumber === pageNumber &&
         annotation.geometry.rects.some(
           (rect) =>
-            nx >= rect.x && nx <= rect.x + rect.width && ny >= rect.y && ny <= rect.y + rect.height,
+            nx >= rect.x - 0.015 &&
+            nx <= rect.x + rect.width + 0.015 &&
+            ny >= rect.y - 0.01 &&
+            ny <= rect.y + rect.height + 0.01,
         ),
     );
     if (hits.length > 0) return hits.at(-1) ?? null;
@@ -624,18 +627,28 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
       }
 
       const active = extracted || selectionRef.current || selection;
-      if (active && active.text) {
+
+      // 1. If clicked directly within active text selection
+      if (active && active.text && isPointInSelection(el, active, event.clientX, event.clientY)) {
         setSelection(active);
         setMenuSnapshot(active);
         setMenuAnnotation(null);
         return;
       }
 
-      // Check if clicked directly on an existing annotation
+      // 2. Check if clicked directly on an existing annotation
       const hit = annotationAtPoint(el, annotationsRef.current, event.clientX, event.clientY);
       if (hit) {
         setMenuSnapshot(null);
         setMenuAnnotation(hit);
+        return;
+      }
+
+      // 3. If there is an active selection without hitting an annotation, retain selection menu
+      if (active && active.text) {
+        setSelection(active);
+        setMenuSnapshot(active);
+        setMenuAnnotation(null);
         return;
       }
 

@@ -95,9 +95,8 @@ export async function getDocumentAnnotations(documentId: string): Promise<Docume
 
     if (!error && data) {
       const dbAnnotations = (data as unknown as AnnotationRow[]).map(toAnnotation);
-      const dbIds = new Set(dbAnnotations.map((a) => a.id));
-      const extraLocal = localAnnotations.filter((a) => !dbIds.has(a.id));
-      return [...dbAnnotations, ...extraLocal];
+      writeLocal(documentId, dbAnnotations);
+      return dbAnnotations;
     }
   } catch {
     // Return local storage fallback on network/auth exception
@@ -112,8 +111,8 @@ export async function createDocumentAnnotations(
 ): Promise<DocumentAnnotation[]> {
   if (inputs.length === 0) return [];
 
-  const localFallback = async (): Promise<DocumentAnnotation[]> => {
-    const existing = await getDocumentAnnotations(documentId);
+  const localFallback = (): DocumentAnnotation[] => {
+    const existing = readLocal(documentId);
     const created: DocumentAnnotation[] = inputs.map((input) => ({
       id: crypto.randomUUID(),
       documentId,
@@ -151,8 +150,7 @@ export async function createDocumentAnnotations(
 
       if (!error && data) {
         const saved = (data as unknown as AnnotationRow[]).map(toAnnotation);
-        // Also keep local storage in sync
-        const existing = await getDocumentAnnotations(documentId);
+        const existing = readLocal(documentId);
         const dbIds = new Set(saved.map((s) => s.id));
         const filtered = existing.filter((e) => !dbIds.has(e.id));
         writeLocal(documentId, [...filtered, ...saved]);
