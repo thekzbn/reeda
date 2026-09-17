@@ -841,19 +841,19 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
       } else if (e.key === "Delete" || e.key === "Backspace") {
         if (menuAnnotation) {
           e.preventDefault();
-          void removeAnnotation(menuAnnotation);
+          void removeAnnotationRef.current(menuAnnotation);
         }
       } else if (!isModifierActive && (selection || selectionRef.current)) {
         const targetSelection = selection || selectionRef.current;
         if (key === "h") {
           e.preventDefault();
-          void createAnnotation("highlight", targetSelection);
+          void createAnnotationRef.current("highlight", targetSelection);
         } else if (key === "u") {
           e.preventDefault();
-          void createAnnotation("underline", targetSelection);
+          void createAnnotationRef.current("underline", targetSelection);
         } else if (key === "s") {
           e.preventDefault();
-          void createAnnotation("strikethrough", targetSelection);
+          void createAnnotationRef.current("strikethrough", targetSelection);
         }
       } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
         e.preventDefault();
@@ -866,15 +866,7 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    isSearchOpen,
-    isTocOpen,
-    currentPage,
-    handleNavigateToPage,
-    selection,
-    menuAnnotation,
-    isSavingAnnotation,
-  ]);
+  }, [isSearchOpen, isTocOpen, currentPage, handleNavigateToPage, selection, menuAnnotation]);
 
   // Zoom handlers
   const handleZoomIn = () => {
@@ -1059,6 +1051,11 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
       toast.success("Added to notes");
     }, 50);
   };
+
+  const createAnnotationRef = useRef(createAnnotation);
+  createAnnotationRef.current = createAnnotation;
+  const removeAnnotationRef = useRef(removeAnnotation);
+  removeAnnotationRef.current = removeAnnotation;
 
   const activeMenuSelection = menuSnapshot || selection || selectionRef.current;
 
