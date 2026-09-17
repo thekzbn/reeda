@@ -429,16 +429,27 @@ export function PdfReader({ documentUrl, title, documentId }: PdfReaderProps) {
 
   useEffect(() => {
     let cancelled = false;
-    void getDocumentAnnotations(documentId)
-      .then((loaded) => {
-        if (!cancelled) setAnnotations(loaded);
-      })
-      .catch(() => {
-        if (!cancelled) setAnnotations([]);
-      });
+    const fetchAnnotations = () => {
+      void getDocumentAnnotations(documentId)
+        .then((loaded) => {
+          if (!cancelled) setAnnotations(loaded);
+        })
+        .catch(() => {
+          if (!cancelled) setAnnotations([]);
+        });
+    };
+
+    fetchAnnotations();
+
+    const handleOnline = () => {
+      fetchAnnotations();
+    };
+
+    window.addEventListener("online", handleOnline);
 
     return () => {
       cancelled = true;
+      window.removeEventListener("online", handleOnline);
     };
   }, [documentId]);
 

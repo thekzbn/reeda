@@ -56,6 +56,8 @@ function toAnnotation(row: AnnotationRow): DocumentAnnotation {
 }
 
 const testStorageKey = (documentId: string) => `reeda-annotations:${documentId}`;
+const pendingCreationsKey = (documentId: string) => `reeda-pending-annotations:${documentId}`;
+const pendingDeletionsKey = (documentId: string) => `reeda-pending-deletions:${documentId}`;
 const isTestDocument = (documentId: string) => documentId.startsWith("test-fixture-");
 
 function readLocal(documentId: string): DocumentAnnotation[] {
@@ -79,6 +81,105 @@ function writeLocal(documentId: string, list: DocumentAnnotation[]): void {
   }
 }
 
+function readPendingCreations(documentId: string): CreateAnnotationInput[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(pendingCreationsKey(documentId));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as CreateAnnotationInput[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writePendingCreations(documentId: string, list: CreateAnnotationInput[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (list.length === 0) {
+      window.localStorage.removeItem(pendingCreationsKey(documentId));
+    } else {
+      window.localStorage.setItem(pendingCreationsKey(documentId), JSON.stringify(list));
+    }
+  } catch {
+    // Storage can be unavailable. Ignore.
+  }
+}
+
+function readPendingDeletions(documentId: string): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(pendingDeletionsKey(documentId));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as string[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writePendingDeletions(documentId: string, list: string[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (list.length === 0) {
+      window.localStorage.removeItem(pendingDeletionsKey(documentId));
+    } else {
+      window.localStorage.setItem(pendingDeletionsKey(documentId), JSON.stringify(list));
+    }
+  } catch {
+    // Storage can be unavailable. Ignore.
+  }
+}
+
+export async function syncPendingAnnotations(documentId: string): Promise<void> {
+  if (isTestDocument(documentId) || typeof window === "undefined") return;
+
+  const pendingCreations = readPendingCreations(documentId);
+  const pendingDeletions = readPendingDeletions(documentId);
+
+  if (pendingCreations.length === 0 && pendingDeletions.length === 0) return;
+
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData?.user?.id;
+    if (!userId) return;
+
+    if (pendingDeletions.length > 0) {
+      const { error: delError } = await supabase
+        .from("document_annotations")
+        .delete()
+        .in("id", pendingDeletions)
+        .eq("document_id", documentId)
+        .eq("user_id", userId);
+
+      if (!delError) {
+        writePendingDeletions(documentId, []);
+      }
+    }
+
+    if (pendingCreations.length > 0) {
+      const { error: insError } = await supabase
+        .from("document_annotations")
+        .insert(
+          pendingCreations.map((input) => ({
+            document_id: documentId,
+            user_id: userId,
+            page_number: input.pageNumber,
+            annotation_type: input.type,
+            selected_text: input.selectedText,
+            geometry: input.geometry as unknown as Json,
+          })),
+        );
+
+      if (!insError) {
+        writePendingCreations(documentId, []);
+      }
+    }
+  } catch {
+    // Still offline or unauthenticated; leave pending items in storage
+  }
+}
+
 export async function getDocumentAnnotations(documentId: string): Promise<DocumentAnnotation[]> {
   const localAnnotations: DocumentAnnotation[] = readLocal(documentId);
 
@@ -87,6 +188,8 @@ export async function getDocumentAnnotations(documentId: string): Promise<Docume
   }
 
   try {
+    await syncPendingAnnotations(documentId);
+
     const { data, error } = await supabase
       .from("document_annotations")
       .select("id, document_id, page_number, annotation_type, selected_text, geometry, created_at")
@@ -120,6 +223,11 @@ export async function createDocumentAnnotations(
       createdAt: new Date().toISOString(),
     }));
     writeLocal(documentId, [...existing, ...created]);
+
+    if (!isTestDocument(documentId)) {
+      const pending = readPendingCreations(documentId);
+      writePendingCreations(documentId, [...pending, ...inputs]);
+    }
 
     return created;
   };
@@ -183,29 +291,39 @@ export async function deleteDocumentAnnotation(
     .map((a) => a.id);
 
   const deletedSet = new Set(targetIds.length > 0 ? targetIds : [annotationId]);
+  const deletedArray = Array.from(deletedSet);
   writeLocal(
     documentId,
     local.filter((a) => !deletedSet.has(a.id)),
   );
 
   if (isTestDocument(documentId)) {
-    return Array.from(deletedSet);
+    return deletedArray;
   }
 
   try {
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData?.user?.id;
     if (userId) {
-      await supabase
+      const { error } = await supabase
         .from("document_annotations")
         .delete()
-        .in("id", Array.from(deletedSet))
+        .in("id", deletedArray)
         .eq("document_id", documentId)
         .eq("user_id", userId);
+
+      if (error) {
+        const pending = readPendingDeletions(documentId);
+        writePendingDeletions(documentId, [...pending, ...deletedArray]);
+      }
+    } else {
+      const pending = readPendingDeletions(documentId);
+      writePendingDeletions(documentId, [...pending, ...deletedArray]);
     }
   } catch {
-    // ignore
+    const pending = readPendingDeletions(documentId);
+    writePendingDeletions(documentId, [...pending, ...deletedArray]);
   }
 
-  return Array.from(deletedSet);
+  return deletedArray;
 }
