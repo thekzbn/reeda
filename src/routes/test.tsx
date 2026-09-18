@@ -16,8 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { PdfReader } from "@/components/reader/PdfReader";
+import { pluginHost } from "@/patch/patch-host";
 
 export const Route = createFileRoute("/test")({
   ssr: false,
@@ -36,6 +38,11 @@ export const Route = createFileRoute("/test")({
 
 function TestPage() {
   const fixture = new URLSearchParams(window.location.search).get("fixture") === "long";
+
+  useEffect(() => {
+    pluginHost.setEnabled("plugin-publish-report", true);
+  }, []);
+
   return (
     <PdfReader
       documentUrl={fixture ? "/long-selection-fixture.pdf" : "/sample-document.pdf"}

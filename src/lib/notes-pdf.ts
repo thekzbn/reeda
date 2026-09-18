@@ -47,6 +47,8 @@ const TEXT_COLOR: [number, number, number] = [26, 26, 30];
 const MUTED_COLOR: [number, number, number] = [124, 124, 134];
 const RULE_COLOR: [number, number, number] = [222, 222, 228];
 const ACCENT_COLOR: [number, number, number] = [106, 90, 205];
+const CORNELL_HEADER_FILL: [number, number, number] = [244, 244, 245];
+const CORNELL_SUMMARY_FILL: [number, number, number] = [237, 237, 240];
 
 function inlineRuns(tokens: Token[] | undefined, inherited: Run = { text: "" }): Run[] {
   if (!tokens) return [];
@@ -221,7 +223,238 @@ class Layout {
   }
 }
 
-function renderTokens(layout: Layout, tokens: Token[], indent = 0) {
+function parseCornellHtml(raw: string): {
+  topic: string;
+  cues: string[];
+  notes: string[];
+  summary: string;
+} | null {
+  if (!raw.includes('class="cornell-notes"') && !raw.includes("class='cornell-notes'")) {
+    return null;
+  }
+  // Extract <th colspan="2"> content for topic band
+  const topicMatch = raw.match(/<th[^>]*colspan[^>]*>\s*(.*?)\s*<\/th>/i);
+  const topic = topicMatch
+    ? topicMatch[1]
+        .replace(/<[^>]+>/g, "")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#039;/g, "'")
+        .replace(/&nbsp;/g, " ")
+        .trim()
+    : "";
+
+  // Extract list items from each td in the body row (tr with two tds)
+  const bodyRowMatch = raw.match(/<tr>\s*<td>([\s\S]*?)<\/td>\s*<td>([\s\S]*?)<\/td>\s*<\/tr>/i);
+  const extractListItems = (html: string): string[] => {
+    const items: string[] = [];
+    const liRegex = /<li>([\s\S]*?)<\/li>/gi;
+    let m: RegExpExecArray | null;
+    while ((m = liRegex.exec(html)) !== null) {
+      const text = m[1]
+        .replace(/<[^>]+>/g, "")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#039;/g, "'")
+        .replace(/&nbsp;/g, " ")
+        .trim();
+      if (text) items.push(text);
+    }
+    return items;
+  };
+
+  const cues = bodyRowMatch ? extractListItems(bodyRowMatch[1]) : [];
+  const notes = bodyRowMatch ? extractListItems(bodyRowMatch[2]) : [];
+
+  // Extract last td[colspan="2"] for summary
+  const summaryTdMatches = [...raw.matchAll(/<td[^>]*colspan[^>]*>([\s\S]*?)<\/td>/gi)];
+  const summaryHtml =
+    summaryTdMatches.length > 0 ? summaryTdMatches[summaryTdMatches.length - 1][1] : "";
+  const summary = summaryHtml
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return { topic, cues, notes, summary };
+}
+
+/**
+ * Renders a Cornell notes table on a dedicated A4 page.
+ * Guarantees: always starts on a fresh page, all sections on the same page.
+ * Text that cannot fit is wrapped and font-reduced to MIN_FONT; overflow lands
+ * on a clearly-labelled continuation page.
+ */
+function renderCornellPage(
+  layout: Layout,
+  data: { topic: string; cues: string[]; notes: string[]; summary: string },
+  isFirstContentOnPage: boolean,
+) {
+  const doc = layout.doc;
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const left = PAGE_MARGIN_X;
+  const right = pageW - PAGE_MARGIN_X;
+  const tableW = right - left;
+
+  // Force a new page unless we are already at the very top of an empty page
+  if (!isFirstContentOnPage) {
+    doc.addPage();
+  }
+  layout.y = PAGE_MARGIN_TOP;
+
+  const MIN_FONT = 7;
+  const CELL_FONT = BODY_SIZE - 0.5;
+  const HEADER_H = 24;
+  const COL_HEAD_H = 20;
+  const BODY_H = 200;
+  const SUMMARY_HEAD_H = 20;
+  const SUMMARY_BODY_H = 80;
+  const cueColW = tableW * 0.32;
+  const notesColW = tableW * 0.68;
+
+  // Helper: draw a filled rect with border
+  const rect = (x: number, y: number, w: number, h: number, fill?: [number, number, number]) => {
+    if (fill) {
+      doc.setFillColor(...fill);
+      doc.rect(x, y, w, h, "F");
+    }
+    doc.setDrawColor(...RULE_COLOR);
+    doc.setLineWidth(0.5);
+    doc.rect(x, y, w, h, "S");
+  };
+
+  // Helper: write wrapped text in a cell, reduce font if needed, return lines used
+  const writeCell = (
+    text: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    bold = false,
+    color: [number, number, number] = TEXT_COLOR,
+    vCenter = false,
+  ): number => {
+    if (!text.trim()) return 0;
+    let fontSize = CELL_FONT;
+    let lines: string[] = [];
+    const pad = 8;
+    const innerW = w - pad * 2;
+    while (fontSize >= MIN_FONT) {
+      doc.setFont("helvetica", bold ? "bold" : "normal");
+      doc.setFontSize(fontSize);
+      lines = doc.splitTextToSize(text, innerW) as string[];
+      const textH = lines.length * fontSize * 1.35;
+      if (textH <= h - pad * 2 || fontSize <= MIN_FONT) break;
+      fontSize -= 0.5;
+    }
+    doc.setFont("helvetica", bold ? "bold" : "normal");
+    doc.setFontSize(fontSize);
+    doc.setTextColor(...color);
+    const lineH = fontSize * 1.35;
+    const totalH = lines.length * lineH;
+    const startY = vCenter ? y + (h - totalH) / 2 + fontSize : y + pad + fontSize;
+    lines.forEach((ln, idx) => {
+      doc.text(ln, x + pad, startY + idx * lineH);
+    });
+    return lines.length;
+  };
+
+  // Helper: write bullet list in a cell (with possible font reduction)
+  const writeBullets = (items: string[], x: number, y: number, w: number, h: number) => {
+    let fontSize = CELL_FONT;
+    const pad = 8;
+    const innerW = w - pad * 2 - 10;
+    let allFit = false;
+    let allLines: string[][] = [];
+    while (fontSize >= MIN_FONT) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(fontSize);
+      allLines = items.map((item) => doc.splitTextToSize(`• ${item}`, innerW) as string[]);
+      const totalH = allLines.reduce((sum, ls) => sum + ls.length * fontSize * 1.35, 0);
+      if (totalH <= h - pad * 2 || fontSize <= MIN_FONT) {
+        allFit = totalH <= h - pad * 2;
+        break;
+      }
+      fontSize -= 0.5;
+    }
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(fontSize);
+    doc.setTextColor(...TEXT_COLOR);
+    const lineH = fontSize * 1.35;
+    let curY = y + pad + fontSize;
+    for (const ls of allLines) {
+      for (const ln of ls) {
+        if (curY + lineH > y + h - pad) {
+          if (!allFit) {
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(MIN_FONT);
+            doc.setTextColor(...MUTED_COLOR);
+            doc.text("(content continues…)", x + pad, curY);
+          }
+          return;
+        }
+        doc.text(ln, x + pad, curY);
+        curY += lineH;
+      }
+    }
+  };
+
+  // ── Row 1: Topic heading (full width)
+  let y = layout.y;
+  rect(left, y, tableW, HEADER_H, CORNELL_HEADER_FILL);
+  writeCell(data.topic || "Topic / Lecture", left, y, tableW, HEADER_H, true, TEXT_COLOR, true);
+  y += HEADER_H;
+
+  // ── Row 2: Column headings
+  rect(left, y, cueColW, COL_HEAD_H, CORNELL_HEADER_FILL);
+  rect(left + cueColW, y, notesColW, COL_HEAD_H, CORNELL_HEADER_FILL);
+  writeCell("Cues & Questions", left, y, cueColW, COL_HEAD_H, true, TEXT_COLOR, true);
+  writeCell("Notes", left + cueColW, y, notesColW, COL_HEAD_H, true, TEXT_COLOR, true);
+  y += COL_HEAD_H;
+
+  // ── Row 3: Body (cues | notes)
+  rect(left, y, cueColW, BODY_H);
+  rect(left + cueColW, y, notesColW, BODY_H);
+  writeBullets(data.cues, left, y, cueColW, BODY_H);
+  writeBullets(data.notes, left + cueColW, y, notesColW, BODY_H);
+  y += BODY_H;
+
+  // ── Row 4: Summary heading (full width)
+  rect(left, y, tableW, SUMMARY_HEAD_H, CORNELL_HEADER_FILL);
+  writeCell("Summary", left, y, tableW, SUMMARY_HEAD_H, true, TEXT_COLOR, true);
+  y += SUMMARY_HEAD_H;
+
+  // ── Row 5: Summary body (full width)
+  rect(left, y, tableW, SUMMARY_BODY_H, CORNELL_SUMMARY_FILL);
+  writeCell(
+    data.summary || "Brief synthesis connecting recall cues to detailed notes.",
+    left,
+    y,
+    tableW,
+    SUMMARY_BODY_H,
+    false,
+    TEXT_COLOR,
+  );
+  y += SUMMARY_BODY_H;
+
+  layout.y = y;
+
+  // Force subsequent content onto a new page
+  doc.addPage();
+  layout.y = PAGE_MARGIN_TOP;
+}
+
+function renderTokens(layout: Layout, tokens: Token[], indent = 0, isFirst = { value: true }) {
   for (const token of tokens) {
     switch (token.type) {
       case "space":
@@ -239,19 +472,21 @@ function renderTokens(layout: Layout, tokens: Token[], indent = 0) {
           indent,
         });
         layout.space(4);
+        isFirst.value = false;
         break;
       }
       case "paragraph": {
         const paragraph = token as Tokens.Paragraph;
         layout.writeRuns(inlineRuns(paragraph.tokens), { indent });
         layout.space(7);
+        isFirst.value = false;
         break;
       }
       case "blockquote": {
         const quote = token as Tokens.Blockquote;
         const startY = layout.y;
         const startPage = layout.doc.getCurrentPageInfo().pageNumber;
-        renderTokens(layout, quote.tokens, indent + 18);
+        renderTokens(layout, quote.tokens, indent + 18, isFirst);
         const endPage = layout.doc.getCurrentPageInfo().pageNumber;
         if (endPage === startPage) {
           layout.doc.setDrawColor(...RULE_COLOR);
@@ -292,11 +527,12 @@ function renderTokens(layout: Layout, tokens: Token[], indent = 0) {
             ...(prefix ? { firstLinePrefix: prefix } : {}),
           });
           const nested = item.tokens.filter((t) => t.type === "list");
-          if (nested.length > 0) renderTokens(layout, nested, itemIndent);
+          if (nested.length > 0) renderTokens(layout, nested, itemIndent, isFirst);
           layout.space(2);
           counter += 1;
         }
         layout.space(6);
+        isFirst.value = false;
         break;
       }
       case "code": {
@@ -312,10 +548,12 @@ function renderTokens(layout: Layout, tokens: Token[], indent = 0) {
           });
         }
         layout.space(8);
+        isFirst.value = false;
         break;
       }
       case "hr":
         layout.rule();
+        isFirst.value = false;
         break;
       case "table": {
         const table = token as Tokens.Table;
@@ -350,16 +588,29 @@ function renderTokens(layout: Layout, tokens: Token[], indent = 0) {
         drawRow(table.header, true);
         for (const row of table.rows) drawRow(row, false);
         layout.space(8);
+        isFirst.value = false;
         break;
       }
-      case "html":
+      case "html": {
+        const htmlToken = token as Tokens.HTML;
+        const raw = htmlToken.text ?? "";
+        const cornelData = parseCornellHtml(raw);
+        if (cornelData) {
+          renderCornellPage(layout, cornelData, isFirst.value);
+          // renderCornellPage always ends by adding a new page; that page is
+          // considered the first content (empty) for the next token.
+          isFirst.value = true;
+        }
+        // Non-Cornell HTML tokens are silently ignored (no DOM injection).
         break;
+      }
       default: {
         const generic = token as Tokens.Generic & { text?: string; tokens?: Token[] };
-        if (generic.tokens) renderTokens(layout, generic.tokens, indent);
+        if (generic.tokens) renderTokens(layout, generic.tokens, indent, isFirst);
         else if (typeof generic.text === "string" && generic.text.trim() !== "") {
           layout.writeRuns(plainRuns(generic.text), { indent });
           layout.space(6);
+          isFirst.value = false;
         }
       }
     }
@@ -394,11 +645,25 @@ export function exportNotesToPdf({
 
   const layout = new Layout(doc);
   const tokens = marked.lexer(markdown.trim() === "" ? "_This note is empty._" : markdown);
-  renderTokens(layout, tokens);
+  const isFirst = { value: true };
+  renderTokens(layout, tokens, 0, isFirst);
+
+  // If the last action was a Cornell page, renderCornellPage left us on a
+  // fresh empty page. Remove it unless we need to write source info there.
+  const trailingBlankPage = isFirst.value && doc.getNumberOfPages() > 1;
+  if (trailingBlankPage && !(includeSource && sourceTitle)) {
+    // Delete the trailing empty page by selecting page (n-1) before saving
+    doc.deletePage(doc.getNumberOfPages());
+  }
 
   if (includeSource && sourceTitle) {
-    layout.space(10);
-    layout.ensure(30);
+    if (trailingBlankPage) {
+      // The trailing page is already selected; write source info there.
+      layout.y = PAGE_MARGIN_TOP;
+    } else {
+      layout.space(10);
+      layout.ensure(30);
+    }
     doc.setDrawColor(...RULE_COLOR);
     doc.setLineWidth(0.6);
     doc.line(PAGE_MARGIN_X, layout.y, PAGE_MARGIN_X + layout.width, layout.y);

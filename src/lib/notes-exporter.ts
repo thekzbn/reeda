@@ -146,6 +146,33 @@ export function exportNotesToHtml(options: NotesExportOptions): void {
       overflow: hidden;
       font-size: 0.9rem;
     }
+    .content table.cornell-notes {
+      table-layout: fixed;
+      width: 100%;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .content table.cornell-notes th[colspan="2"],
+    .content table.cornell-notes td[colspan="2"] {
+      width: 100%;
+    }
+    .content table.cornell-notes th:first-child:not([colspan]),
+    .content table.cornell-notes td:first-child:not([colspan]) {
+      width: 32%;
+    }
+    .content table.cornell-notes th:nth-child(2):not([colspan]),
+    .content table.cornell-notes td:nth-child(2):not([colspan]) {
+      width: 68%;
+    }
+    .content table.cornell-notes tr:nth-child(3) td {
+      min-height: 220px;
+      height: 220px;
+    }
+    .content table.cornell-notes tr:last-child td {
+      background-color: var(--accent);
+      min-height: 75px;
+      height: 75px;
+    }
     .content th {
       background-color: var(--accent);
       color: var(--fg);
@@ -164,10 +191,25 @@ export function exportNotesToHtml(options: NotesExportOptions): void {
     }
     .content td:last-child { border-right: none; }
     .content tr:last-child td { border-bottom: none; }
+    .content table ul, .content table ol {
+      padding-left: 1.25rem;
+      margin: 0.35rem 0;
+    }
+    .content table ul { list-style: disc; }
+    .content table ol { list-style: decimal; }
+    .content table li {
+      display: list-item;
+      margin-bottom: 0.25rem;
+    }
     .content ul, .content ol { padding-left: 1.5rem; }
     .content li { margin-bottom: 0.35rem; }
     @media print {
       body { max-width: 100%; padding: 0; }
+      .content table.cornell-notes,
+      table.cornell-notes {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
     }
   </style>
 </head>

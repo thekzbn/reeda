@@ -23,7 +23,27 @@ import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
+import Table from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import TableHeader from "@tiptap/extension-table-header";
+import TableCell from "@tiptap/extension-table-cell";
 import { Markdown } from "tiptap-markdown";
+
+const CustomTable = Table.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      class: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("class"),
+        renderHTML: (attributes) => {
+          if (!attributes.class) return {};
+          return { class: attributes.class };
+        },
+      },
+    };
+  },
+});
 import {
   Bold,
   Italic,
@@ -282,7 +302,12 @@ function Toolbar({
               return storage ? storage.getMarkdown() : editor.getText();
             },
             onInsertNote: (text: string) => {
-              editor.chain().focus().insertContent(text).run();
+              const trimmed = text.trim();
+              if (trimmed.startsWith("<")) {
+                editor.chain().focus().insertContentAt(editor.state.doc.content.size, text).run();
+              } else {
+                editor.chain().focus().insertContent(text).run();
+              }
             },
             onToast: (msg: string, type?: "success" | "info" | "error") => {
               if (type === "success") toast.success(msg);
@@ -360,7 +385,11 @@ export const NotesEditor = forwardRef<NotesEditorHandle, NotesEditorProps>(funct
       TaskList,
       TaskItem.configure({ nested: true }),
       Placeholder.configure({ placeholder: "Start writing your notes" }),
-      Markdown.configure({ html: false, transformPastedText: true, linkify: true }),
+      CustomTable.configure({ resizable: false }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      Markdown.configure({ html: true, transformPastedText: true, linkify: true }),
     ],
     content: initialMarkdown,
     editorProps: {

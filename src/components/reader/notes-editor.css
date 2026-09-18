@@ -144,6 +144,39 @@
   font-size: 0.9em;
 }
 
+.notes-editor .ProseMirror table.cornell-notes {
+  table-layout: fixed;
+  width: 100%;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.notes-editor .ProseMirror table.cornell-notes th[colspan="2"],
+.notes-editor .ProseMirror table.cornell-notes td[colspan="2"] {
+  width: 100%;
+}
+
+.notes-editor .ProseMirror table.cornell-notes th:first-child:not([colspan]),
+.notes-editor .ProseMirror table.cornell-notes td:first-child:not([colspan]) {
+  width: 32%;
+}
+
+.notes-editor .ProseMirror table.cornell-notes th:nth-child(2):not([colspan]),
+.notes-editor .ProseMirror table.cornell-notes td:nth-child(2):not([colspan]) {
+  width: 68%;
+}
+
+.notes-editor .ProseMirror table.cornell-notes tr:nth-child(3) td {
+  min-height: 220px;
+  height: 220px;
+}
+
+.notes-editor .ProseMirror table.cornell-notes tr:last-child td {
+  background-color: var(--accent);
+  min-height: 75px;
+  height: 75px;
+}
+
 .notes-editor .ProseMirror th {
   background: var(--accent);
   color: var(--accent-foreground);
@@ -171,4 +204,30 @@
 
 .notes-editor .ProseMirror tr:last-child td {
   border-bottom: none;
+}
+
+.notes-editor .ProseMirror table ul,
+.notes-editor .ProseMirror table ol {
+  padding-left: 1.25rem;
+  margin: 0.3em 0;
+}
+
+.notes-editor .ProseMirror table ul {
+  list-style: disc;
+}
+
+.notes-editor .ProseMirror table ol {
+  list-style: decimal;
+}
+
+.notes-editor .ProseMirror table li {
+  display: list-item;
+  margin-bottom: 0.25em;
+}
+
+@media print {
+  .notes-editor .ProseMirror table.cornell-notes {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }

@@ -269,6 +269,16 @@ export function LibraryTagsWidget({ context }: { context?: PluginExecutionContex
  * Slot: slot_notes_pane_header_actions
  * Inserts structured templates (Cornell, Executive Summary, Lit Review, Q&A) and exports notes to HTML, Markdown, or PDF.
  */
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export function PublishAndReportWidget({
   context,
 }: {
@@ -286,38 +296,49 @@ export function PublishAndReportWidget({
   const handleInsertTemplate = (type: "cornell" | "exec" | "lit" | "qa") => {
     let templateText = "";
     switch (type) {
-      case "cornell":
-        templateText = `\n\n# CORNELL NOTES
-**Source:** ${docTitle}  
-**Date:** ${todayStr}
-
----
-
-### 📌 Cues & Questions
-*Key concepts, core questions, and prompt vocabulary:*
-- **Key Question 1:** What is the primary thesis of this document?
-- **Core Concept / Term:** 
-- **Key Question 2:** What evidence supports the central claim?
-
----
-
-### 📝 Main Notes & Outlines
-*Detailed notes, supporting evidence, and structural breakdown:*
-- **Main Point 1:**
-  - Supporting detail / quote from text
-  - Analysis and explanation
-- **Main Point 2:**
-  - Supporting detail / data reference
-  - Key takeaways
-
----
-
-### 💡 Summary & Synthesis
-> **Synthesis:**  
-> Write a 2–3 sentence summary connecting the cues on the left/above with the main notes into a cohesive conclusion.
-
-`;
+      case "cornell": {
+        const safeTitle = escapeHtml(docTitle);
+        const safeDate = escapeHtml(todayStr);
+        templateText = `\n\n<h2>Cornell Notes</h2>
+<p><strong>Source:</strong> ${safeTitle} &nbsp;|&nbsp; <strong>Date:</strong> ${safeDate}</p>
+<table class="cornell-notes">
+  <tbody>
+    <tr>
+      <th colspan="2">Topic / Lecture: ${safeTitle}</th>
+    </tr>
+    <tr>
+      <th>Cues &amp; Questions</th>
+      <th>Notes</th>
+    </tr>
+    <tr>
+      <td>
+        <ul>
+          <li>Key Question 1: What is the primary thesis?</li>
+          <li>Core Concept / Term:</li>
+          <li>Key Question 2: What evidence supports the claim?</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li>Main Point 1:</li>
+          <li>Supporting detail / evidence:</li>
+          <li>Main Point 2:</li>
+          <li>Key takeaways and data:</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <th colspan="2">Summary</th>
+    </tr>
+    <tr>
+      <td colspan="2">
+        <p>Brief 2–3 sentence synthesis connecting the recall cues to the detailed notes above.</p>
+      </td>
+    </tr>
+  </tbody>
+</table>\n\n`;
         break;
+      }
       case "exec":
         templateText = `\n\n# Executive Summary\n**Document:** ${docTitle}  \n**Date:** ${todayStr}  \n\n## Core Thesis\nInsert the primary argument or goal of this reading.\n\n## Key Findings\n1. First major insight...\n2. Second major insight...\n3. Third major insight...\n\n## Action Items\n- [ ] Follow up on reference...\n- [ ] Synthesize findings into report...\n\n`;
         break;
