@@ -299,6 +299,35 @@ class PluginHostStore {
     this.save();
     return true;
   }
+
+  public registerPatch(plugin: ReedaPluginManifest): void {
+    this.registerPlugin(plugin);
+  }
+
+  public approvePatch(pluginId: string, userId = "current_reader"): boolean {
+    return this.approvePlugin(pluginId, userId);
+  }
+
+  public removePatch(pluginId: string): void {
+    this.removePlugin(pluginId);
+  }
+
+  public rejectPatch(pluginId: string, reason?: string): void {
+    const plugin = this.getById(pluginId);
+    if (!plugin) return;
+    plugin.status = "degraded_paused";
+    if (reason) {
+      plugin.invariant_satisfaction.push(`User rejection: ${reason}`);
+    }
+    this.save();
+  }
+
+  public toggleDegraded(pluginId: string): void {
+    const plugin = this.getById(pluginId);
+    if (!plugin) return;
+    plugin.status = plugin.status === "degraded_paused" ? "active_verified" : "degraded_paused";
+    this.save();
+  }
 }
 
 export function getDocumentPriorityTag(docId: string): string | null {

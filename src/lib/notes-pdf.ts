@@ -234,8 +234,9 @@ function parseCornellHtml(raw: string): {
   }
   // Extract <th colspan="2"> content for topic band
   const topicMatch = raw.match(/<th[^>]*colspan[^>]*>\s*(.*?)\s*<\/th>/i);
-  const topic = topicMatch
-    ? topicMatch[1]
+  const rawTopic = topicMatch && topicMatch[1] ? topicMatch[1] : "";
+  const topic = rawTopic
+    ? rawTopic
         .replace(/<[^>]+>/g, "")
         .replace(/&amp;/g, "&")
         .replace(/&lt;/g, "<")
@@ -253,7 +254,8 @@ function parseCornellHtml(raw: string): {
     const liRegex = /<li>([\s\S]*?)<\/li>/gi;
     let m: RegExpExecArray | null;
     while ((m = liRegex.exec(html)) !== null) {
-      const text = m[1]
+      const matchText = m[1] ?? "";
+      const text = matchText
         .replace(/<[^>]+>/g, "")
         .replace(/&amp;/g, "&")
         .replace(/&lt;/g, "<")
@@ -267,13 +269,14 @@ function parseCornellHtml(raw: string): {
     return items;
   };
 
-  const cues = bodyRowMatch ? extractListItems(bodyRowMatch[1]) : [];
-  const notes = bodyRowMatch ? extractListItems(bodyRowMatch[2]) : [];
+  const cues = bodyRowMatch && bodyRowMatch[1] ? extractListItems(bodyRowMatch[1]) : [];
+  const notes = bodyRowMatch && bodyRowMatch[2] ? extractListItems(bodyRowMatch[2]) : [];
 
   // Extract last td[colspan="2"] for summary
   const summaryTdMatches = [...raw.matchAll(/<td[^>]*colspan[^>]*>([\s\S]*?)<\/td>/gi)];
-  const summaryHtml =
-    summaryTdMatches.length > 0 ? summaryTdMatches[summaryTdMatches.length - 1][1] : "";
+  const lastMatch =
+    summaryTdMatches.length > 0 ? summaryTdMatches[summaryTdMatches.length - 1] : undefined;
+  const summaryHtml = lastMatch && lastMatch[1] ? lastMatch[1] : "";
   const summary = summaryHtml
     .replace(/<[^>]+>/g, " ")
     .replace(/&amp;/g, "&")

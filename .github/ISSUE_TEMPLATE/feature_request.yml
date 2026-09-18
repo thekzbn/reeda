@@ -1,0 +1,39 @@
+name: 💡 Feature Request
+description: Suggest an idea or enhancement for Reeda
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature! Please ensure your proposal aligns with Reeda's core design philosophy of a fast, distraction-free, privacy-preserving PDF reading and note-taking environment.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: Is your feature request related to a problem or limitation? Please describe clearly.
+      placeholder: I am always frustrated when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution & User Experience
+      description: A clear and concise description of what you want to happen and how the interface should behave.
+      placeholder: Describe the desired experience and interactions...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative solutions, plugins, or workarounds you have considered.
+      placeholder: Describe any alternative approaches...
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context
+      description: Add any other context, screenshots, mockups, or relevant references.

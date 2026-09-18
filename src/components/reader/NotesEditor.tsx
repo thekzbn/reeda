@@ -37,8 +37,8 @@ const CustomTable = Table.extend({
         default: null,
         parseHTML: (element) => element.getAttribute("class"),
         renderHTML: (attributes) => {
-          if (!attributes.class) return {};
-          return { class: attributes.class };
+          if (!attributes["class"]) return {};
+          return { class: attributes["class"] };
         },
       },
     };

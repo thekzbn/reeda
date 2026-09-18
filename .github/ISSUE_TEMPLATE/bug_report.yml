@@ -1,0 +1,55 @@
+name: 🐛 Bug Report
+description: Report an issue or unexpected behavior in Reeda
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug! Please ensure you have tested against the latest version on `main` or checked existing issues before submitting.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe what happened...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Detailed step-by-step instructions to reproduce the behavior.
+      placeholder: |
+        1. Open `/test` or document `...`
+        2. Select text on page 1
+        3. Press shortcut `h`
+        4. See error in console...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen.
+      placeholder: The annotation should appear and persist in storage...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Browser Console / Terminal Logs
+      description: Copy and paste any relevant console logs, error messages, or stack traces.
+      render: shell
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser, browser version, operating system, and runtime version.
+      placeholder: Chrome 130 / macOS 15.1 / Bun 1.3
+    validations:
+      required: true

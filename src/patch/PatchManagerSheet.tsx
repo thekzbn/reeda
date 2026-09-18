@@ -137,92 +137,96 @@ export function PatchManagerSheet({ open, onOpenChange }: PatchManagerSheetProps
                 </Button>
               </div>
             ) : (
-              patches.map((patch) => (
-                <div
-                  key={patch.patch_id}
-                  className="rounded-xl border border-border bg-card/50 p-4 transition-colors hover:bg-card"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-foreground">{patch.title}</h4>
-                        {getStatusBadge(patch.status)}
-                      </div>
-                      <p className="mt-1 text-xs text-muted-foreground">{patch.description}</p>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                        onClick={() => {
-                          patchHost.removePatch(patch.patch_id);
-                          toast.info(`Removed ${patch.title}`);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Metadata and Slot Locks */}
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg p-2.5">
-                    <div className="flex items-center gap-1.5">
-                      <Lock className="h-3 w-3 text-primary/70" />
-                      <span>
-                        Slot:{" "}
-                        <code className="font-mono text-[11px] text-foreground">
-                          {patch.resource_locks.slot_id}
-                        </code>
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Shield className="h-3 w-3 text-primary/70" />
-                      <span>
-                        Caps:{" "}
-                        <code className="font-mono text-[11px] text-foreground">
-                          {patch.capabilities.join(", ")}
-                        </code>
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Step 18: Verification Banner */}
-                  {patch.status === "active_unverified_user" && (
-                    <div className="mt-3 flex items-center justify-between gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 p-2.5 text-xs text-amber-700 dark:text-amber-300">
+              patches.map((patch) => {
+                const patchId = patch.id || patch.patch_id || "";
+                const patchTitle = patch.name || patch.title || "Untitled Extension";
+                return (
+                  <div
+                    key={patchId}
+                    className="rounded-xl border border-border bg-card/50 p-4 transition-colors hover:bg-card"
+                  >
+                    <div className="flex items-start justify-between gap-3">
                       <div>
-                        <span className="font-medium">Host structural tests passed.</span> Waiting
-                        for your functional validation.
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium text-foreground">{patchTitle}</h4>
+                          {getStatusBadge(patch.status)}
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">{patch.description}</p>
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
+
+                      <div className="flex items-center gap-1.5">
                         <Button
-                          size="sm"
                           variant="ghost"
-                          className="h-7 text-xs text-amber-800 dark:text-amber-200 hover:bg-amber-500/20"
-                          onClick={() => handleReject(patch.patch_id)}
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                          onClick={() => {
+                            patchHost.removePatch(patchId);
+                            toast.info(`Removed ${patchTitle}`);
+                          }}
                         >
-                          Report Issue
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
-                          onClick={() => handleApprove(patch.patch_id)}
-                        >
-                          Approve (Verified)
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
-                  )}
 
-                  {/* Invariant satisfaction lines */}
-                  <div className="mt-3 text-[11px] text-muted-foreground font-mono bg-muted/20 rounded p-2 space-y-0.5">
-                    {patch.invariant_satisfaction.map((inv, idx) => (
-                      <div key={idx}>✓ {inv}</div>
-                    ))}
+                    {/* Metadata and Slot Locks */}
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg p-2.5">
+                      <div className="flex items-center gap-1.5">
+                        <Lock className="h-3 w-3 text-primary/70" />
+                        <span>
+                          Slot:{" "}
+                          <code className="font-mono text-[11px] text-foreground">
+                            {patch.resource_locks.slot_id}
+                          </code>
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Shield className="h-3 w-3 text-primary/70" />
+                        <span>
+                          Caps:{" "}
+                          <code className="font-mono text-[11px] text-foreground">
+                            {patch.capabilities.join(", ")}
+                          </code>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Step 18: Verification Banner */}
+                    {patch.status === "active_unverified_user" && (
+                      <div className="mt-3 flex items-center justify-between gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 p-2.5 text-xs text-amber-700 dark:text-amber-300">
+                        <div>
+                          <span className="font-medium">Host structural tests passed.</span> Waiting
+                          for your functional validation.
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 text-xs text-amber-800 dark:text-amber-200 hover:bg-amber-500/20"
+                            onClick={() => handleReject(patchId)}
+                          >
+                            Report Issue
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                            onClick={() => handleApprove(patchId)}
+                          >
+                            Approve (Verified)
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Invariant satisfaction lines */}
+                    <div className="mt-3 text-[11px] text-muted-foreground font-mono bg-muted/20 rounded p-2 space-y-0.5">
+                      {patch.invariant_satisfaction.map((inv: string, idx: number) => (
+                        <div key={idx}>✓ {inv}</div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </DialogContent>

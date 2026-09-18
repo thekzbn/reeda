@@ -10,6 +10,8 @@ export type PluginLifecycleStatus =
   | "recompiling_on_demand"
   | "degraded_paused";
 
+export type PatchLifecycleStatus = PluginLifecycleStatus;
+
 export type ReedaSlotId =
   | "slot_library_header_actions"
   | "slot_reader_toolbar_actions"
@@ -24,7 +26,9 @@ export interface PluginResourceLocks {
 
 export interface ReedaPluginManifest {
   id: string;
+  patch_id?: string;
   name: string;
+  title?: string;
   description: string;
   category: "reader" | "notes" | "library" | "utility";
   author: string;
@@ -51,6 +55,8 @@ export interface ReedaPluginManifest {
   invariant_satisfaction: string[];
   ui_component_name: string;
 }
+
+export type ReedaPatchManifest = ReedaPluginManifest;
 
 export interface PluginExecutionContext {
   documentId?: string | undefined;

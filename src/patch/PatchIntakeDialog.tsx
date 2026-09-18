@@ -60,11 +60,15 @@ export function PatchIntakeDialog({ open, onOpenChange }: PatchIntakeDialogProps
       const shortHash = Math.random().toString(16).slice(2, 10);
 
       const newPatch: ReedaPatchManifest = {
+        id,
         patch_id: id,
+        name: prompt.slice(0, 32) + (prompt.length > 32 ? "..." : ""),
         title: prompt.slice(0, 32) + (prompt.length > 32 ? "..." : ""),
         description: prompt,
+        category: "utility",
         author: "current_user",
         version: "1.0.0",
+        enabled: true,
         canonical_hash: `${shortHash}00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff`,
         status: "active_unverified_user",
         target_service: "reeda_reader",
