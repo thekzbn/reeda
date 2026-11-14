@@ -14,7 +14,7 @@ Reeda is a web application that lets you upload PDF documents, read them in a fo
 
 **The reading workspace** is the centre of the product. When you open a document, Reeda presents a split-pane view: the PDF on the left, a rich-text notes editor on the right. The divider between them is draggable, so you can give more space to whichever pane matters at the moment. On smaller screens, the workspace switches between full-screen PDF and full-screen notes views.
 
-**The PDF reader** renders pages using Mozilla's pdf.js on a canvas, with a selectable text layer on top. It supports continuous vertical scrolling, fit-to-width and fit-to-page zoom modes, manual zoom controls, fullscreen mode, keyboard navigation (arrow keys, Page Up/Down), table of contents extraction from PDF outlines, and live full-text search with match highlighting and navigation across all pages.
+**The PDF reader** renders pages using Mozilla's pdf.js on a canvas, with a selectable text layer on top. It supports continuous vertical scrolling, fit-to-width and fit-to-page zoom modes, manual zoom controls, fullscreen mode, keyboard navigation (arrow keys, Page Up/Down), table of contents extraction from PDF outlines, and live full-text search with match highlighting and navigation across all pages. Select text to add a persistent highlight, underline, or strikethrough annotation; annotations can be removed and are synced with the document when signed in.
 
 **The notes editor** is a Tiptap-based rich-text editor that stores content as Markdown. It supports headings, bold, italic, bullet lists, numbered lists, task lists with checkboxes, blockquotes, and links. Notes are persisted per document and autosave after a short debounce (900ms). When you select text in the PDF, an "Add to notes" button appears, letting you send passages directly into your notes without copy-pasting.
 
@@ -116,7 +116,7 @@ Before building something, it helps to understand what Reeda values:
 
 These are directions the project is actively considering, not commitments:
 
-- Text highlighting and annotation within the PDF
+- Further annotation improvements
 - Improved mobile reading experience
 - Alternative storage providers (Google Drive, OneDrive)
 - Export and sharing of notes
